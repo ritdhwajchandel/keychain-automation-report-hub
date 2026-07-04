@@ -207,7 +207,7 @@ export class AIService {
 
     // Build context
     const contextText = `
-You are an expert Test Automation Report Analyzer assistant.
+You are the AI analyst inside Keychain Automation Console, an expert on test automation reports.
 We are analyzing workflow run #${runData.runNumber} for repo "${runData.name}".
 Metadata: Triggered by ${runData.triggerer} via ${runData.event}, Duration: ${runData.durationSeconds}s, Conclusion: ${runData.conclusion}.
 Overall Stats: ${runData.jobs.reduce((acc, j) => acc + j.allureReport.passed, 0)} passed, ${runData.jobs.reduce((acc, j) => acc + j.allureReport.failed, 0)} failed, ${runData.jobs.reduce((acc, j) => acc + j.allureReport.skipped, 0)} skipped.

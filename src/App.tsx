@@ -508,7 +508,7 @@ export default function App() {
               boxShadow: 'var(--shadow-glow)'
             }}>
               <h1 style={{ fontSize: '2.5rem', fontWeight: 800, fontFamily: 'var(--font-display)' }} className="text-gradient">
-                Automated Test Report Analyzer
+                Keychain Automation Console
               </h1>
               <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', fontSize: '0.95rem', lineHeight: '1.6' }}>
                 Drill down from GitHub Action Workflows into specific project execution jobs, verify CLI running steps, and inspect calculations from Allure reports.

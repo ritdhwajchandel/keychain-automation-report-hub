@@ -56,10 +56,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           fontSize: '1rem',
           boxShadow: '0 0 15px rgba(99, 102, 241, 0.4)'
         }}>
-          G
+          K
         </div>
         <span style={{ fontSize: '1.2rem', fontWeight: 700, letterSpacing: '-0.02em', fontFamily: 'var(--font-display)' }}>
-          Git<span style={{ color: 'var(--color-accent)' }}>Report</span> Analyzer
+          Keychain<span style={{ color: 'var(--color-accent)' }}>Automation</span> Console
         </span>
       </div>
 

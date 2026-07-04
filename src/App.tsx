@@ -402,6 +402,8 @@ export default function App() {
         return <CheckCircle2 size={size} style={{ color: 'var(--color-success)' }} />;
       case 'failure':
         return <XCircle size={size} style={{ color: 'var(--color-failure)' }} />;
+      case 'in_progress':
+        return <RefreshCw size={size} style={{ color: 'var(--color-info)', animation: 'spin 1s linear infinite' }} />;
       default:
         return <AlertTriangle size={size} style={{ color: 'var(--color-skipped)' }} />;
     }
@@ -925,12 +927,13 @@ export default function App() {
                                   </p>
                                 ) : selectedRun.jobs.map(job => {
                                   const isActive = selectedJob?.id === job.id;
+                                  const isRunning = job.status === 'in_progress';
                                   const { failed, total } = job.allureReport;
                                   return (
                                     <button
                                       key={job.id}
                                       onClick={() => setSelectedJob(job)}
-                                      className={`list-row ${isActive ? 'is-active' : ''}`}
+                                      className={`list-row ${isActive ? 'is-active' : ''} ${isRunning ? 'is-running' : ''}`}
                                     >
                                       <div className="list-row__main">
                                         {renderConclusionIcon(job.status, 14)}

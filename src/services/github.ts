@@ -446,8 +446,11 @@ function generateMockJobs(runId: string, _repoName: string, conclusion: string):
   ];
 
   return jobProjectNames.map((jobName, idx) => {
-    let jobStatus: 'success' | 'failure' | 'skipped' = 'success';
-    if (conclusion === 'failure') {
+    let jobStatus: 'success' | 'failure' | 'skipped' | 'in_progress' = 'success';
+    // Latest run (12) has one in_progress job for demonstration
+    if (runId.endsWith('12') && idx === 3) {
+      jobStatus = 'in_progress';
+    } else if (conclusion === 'failure') {
       const isFailedJob = (seed % 3 === 0 && idx === 9) || (seed % 4 === 0 && idx === 13) || (idx === 14);
       if (isFailedJob) {
         jobStatus = 'failure';

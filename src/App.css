@@ -1,0 +1,105 @@
+/* Custom specific application styles can go here */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+  z-index: 10;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* Dashboard layout with AI Chat */
+.dashboard-layout-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  width: 100%;
+  min-width: 0;
+}
+
+.dashboard-layout-container > * {
+  min-width: 0;
+  overflow-x: clip; /* guard horizontal overflow without clipping hover tooltips vertically */
+}
+
+@media (min-width: 1025px) {
+  .dashboard-layout-container.with-chat {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+}
+
+/* Left sidebar & Right details split */
+.workflow-details-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  width: 100%;
+  min-width: 0;
+}
+
+.workflow-details-split > * {
+  min-width: 0;
+  overflow-x: clip;
+}
+
+@media (min-width: 769px) {
+  .workflow-details-split {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+}
+
+/* Job matrix & Right details split */
+.job-matrix-details-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  align-items: start;
+  width: 100%;
+  min-width: 0;
+}
+
+.job-matrix-details-split > * {
+  min-width: 0;
+  overflow-x: clip;
+}
+
+@media (min-width: 769px) {
+  .job-matrix-details-split {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+}
+
+/* Ensure images/charts are responsive */
+.card, svg, pre {
+  max-width: 100%;
+}
+
+/* Prevent pre blocks from causing horizontal overflow */
+pre {
+  overflow-x: auto;
+  word-wrap: break-word;
+}
+
+/* Constrain cards horizontally but let hover tooltips escape vertically */
+.card {
+  overflow-x: clip;
+}
+
+/* Prevent flex children from overflowing */
+.card > div {
+  min-width: 0;
+}

@@ -7,7 +7,7 @@ import { TestList } from './components/TestList';
 import { TrendChart } from './components/TrendChart';
 import { Insights } from './components/Insights';
 import { AIChat } from './components/AIChat';
-import { githubService } from './services/github';
+import { githubService, parseLogsForTestCases, generateAllureReport } from './services/github';
 import type { GitHubRepo, WorkflowRunReport, GitHubWorkflow, JobExecution } from './services/github';
 import { getRunStats, isRunAnalyzed, findFlakyTests } from './services/insights';
 import { saveRunHistory, applyRunHistory } from './services/history';
@@ -248,6 +248,52 @@ export default function App() {
   // Enrich every run in the list so trends, flaky detection, and per-run stats
   // work from one dataset. Runs sequentially to stay gentle on API rate limits;
   // already-analyzed runs are skipped (per-job results are cached in the service).
+  // Refresh a specific running job's details from GitHub
+  const refreshJobDetails = async (jobId: string) => {
+    if (!selectedRun) return;
+    try {
+      setIsLoadingLogs(true);
+      const jobToRefresh = selectedRun.jobs.find(j => j.id === jobId);
+      if (!jobToRefresh) return;
+
+      // Fetch fresh logs for this job
+      const freshLogs = await githubService.getJobLogs(selectedRun.id, jobId, jobToRefresh.name, jobToRefresh.status, selectedRun.id);
+
+      // Parse fresh logs for test results and status updates
+      const freshTests = parseLogsForTestCases(freshLogs) || [];
+      const freshReport = generateAllureReport(jobToRefresh.name, jobToRefresh.status, jobId);
+
+      // Update the job with fresh data
+      const updatedJob = {
+        ...jobToRefresh,
+        allureReport: {
+          ...freshReport,
+          tests: freshTests.length > 0 ? freshTests : freshReport.tests
+        }
+      };
+
+      // Update the run's jobs with the refreshed data
+      setRuns(prev => prev.map(r => {
+        if (r.id === selectedRun.id) {
+          return {
+            ...r,
+            jobs: r.jobs.map(j => (j.id === jobId ? updatedJob : j))
+          };
+        }
+        return r;
+      }));
+
+      // Update selectedJob if it's the one being refreshed
+      if (selectedJob?.id === jobId) {
+        setSelectedJob(updatedJob);
+      }
+    } catch (err) {
+      console.error('Failed to refresh job details:', err);
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  };
+
   const analyzeHistory = async () => {
     if (historyProgress) return;
     const targets = runs.filter(r => r.jobs.length > 0 && !isRunAnalyzed(r));
@@ -942,6 +988,31 @@ export default function App() {
                                         </span>
                                       </div>
                                       <div className="list-row__meta">
+                                        {isRunning && (
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); refreshJobDetails(job.id); }}
+                                            disabled={isLoadingLogs}
+                                            style={{
+                                              display: 'inline-flex',
+                                              alignItems: 'center',
+                                              gap: '0.25rem',
+                                              padding: '0.25rem 0.5rem',
+                                              borderRadius: '4px',
+                                              border: '1px solid rgba(29, 78, 216, 0.3)',
+                                              background: 'rgba(29, 78, 216, 0.08)',
+                                              color: 'var(--color-info)',
+                                              fontSize: '0.7rem',
+                                              fontWeight: 600,
+                                              cursor: isLoadingLogs ? 'not-allowed' : 'pointer',
+                                              transition: 'all var(--transition-fast)',
+                                              opacity: isLoadingLogs ? 0.6 : 1
+                                            }}
+                                            title="Refresh this job's latest status"
+                                          >
+                                            <RefreshCw size={11} style={{ animation: isLoadingLogs ? 'spin 1s linear infinite' : 'none' }} />
+                                            Refresh
+                                          </button>
+                                        )}
                                         {failed > 0 && (
                                           <span className="count-pill count-pill--failure" title={`${failed} failed tests`}>
                                             {failed} ✕

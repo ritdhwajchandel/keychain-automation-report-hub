@@ -102,7 +102,7 @@ export const FavoritesDashboard: React.FC<FavoritesDashboardProps> = ({ repos, f
             {/* Card header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 }}>
-                <h3 style={{ fontSize: '1.05rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h3 style={{ fontSize: '1.05rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Star size={14} fill="var(--color-skipped)" style={{ color: 'var(--color-skipped)', flexShrink: 0 }} />
                   {entry.workflow.name}
                 </h3>
@@ -117,7 +117,7 @@ export const FavoritesDashboard: React.FC<FavoritesDashboardProps> = ({ repos, f
                 )}
                 {avgRate !== null && (
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    Avg <strong className="tabular-nums" style={{ color: '#A5B4FC' }}>{avgRate}%</strong>
+                    Avg <strong className="tabular-nums" style={{ color: 'var(--color-highlight)' }}>{avgRate}%</strong>
                   </div>
                 )}
                 <button
@@ -148,13 +148,13 @@ export const FavoritesDashboard: React.FC<FavoritesDashboardProps> = ({ repos, f
                     key={run.id}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem',
-                      padding: '0.5rem 0.65rem', borderRadius: '6px', background: 'rgba(255,255,255,0.015)',
+                      padding: '0.5rem 0.65rem', borderRadius: '6px', background: 'var(--surface-1)',
                       border: '1px solid var(--border-color)'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0, flex: 1 }}>
                       {conclusionIcon(run.conclusion)}
-                      <strong style={{ fontSize: '0.82rem', color: 'white', flexShrink: 0 }}>#{run.runNumber}</strong>
+                      <strong style={{ fontSize: '0.82rem', color: 'var(--text-primary)', flexShrink: 0 }}>#{run.runNumber}</strong>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
                         <Calendar size={11} /> {new Date(run.createdAt).toLocaleDateString()}
                       </span>

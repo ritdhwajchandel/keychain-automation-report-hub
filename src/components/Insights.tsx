@@ -28,7 +28,7 @@ const SectionCard: React.FC<{ icon: React.ReactNode; title: string; subtitle?: s
   ({ icon, title, subtitle, className, children }) => (
     <div className={`card ${className || ''}`} style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column' }}>
       <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.6rem', marginBottom: '0.9rem' }}>
-        <h3 style={{ fontSize: '0.95rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <h3 style={{ fontSize: '0.95rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {icon} {title}
         </h3>
         {subtitle && <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{subtitle}</p>}
@@ -84,7 +84,7 @@ export const Insights: React.FC<InsightsProps> = ({ run, runs }) => {
             {clusters.map((cluster, idx) => {
               const isOpen = expandedCluster === idx;
               return (
-                <div key={idx} style={{ border: '1px solid rgba(239, 68, 68, 0.15)', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.02)' }}>
+                <div key={idx} style={{ border: '1px solid rgba(225, 29, 72, 0.15)', borderRadius: '8px', background: 'rgba(225, 29, 72, 0.02)' }}>
                   <button
                     onClick={() => setExpandedCluster(isOpen ? null : idx)}
                     style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', width: '100%', padding: '0.75rem', textAlign: 'left' }}

@@ -5,36 +5,42 @@
   --font-display: 'Outfit', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Color Palette - Premium Cyber Dark theme */
-  --bg-main: #0B0F19;
-  --bg-card: rgba(17, 24, 39, 0.7);
-  --bg-sidebar: rgba(10, 15, 30, 0.85);
-  --bg-input: #1F2937;
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-color-glow: rgba(99, 102, 241, 0.25);
-  
-  --text-primary: #F3F4F6;
-  --text-secondary: #9CA3AF;
-  --text-muted: #6B7280;
+  /* Color Palette - Keychain warm light theme */
+  --bg-main: #FAF7F2;
+  --bg-card: #FFFFFF;
+  --bg-sidebar: rgba(250, 247, 242, 0.92);
+  --bg-input: #FFFFFF;
+  --border-color: rgba(28, 25, 23, 0.1);
+  --border-color-glow: rgba(28, 25, 23, 0.28);
 
-  /* Accents */
-  --color-accent: #6366F1; /* Indigo */
-  --color-accent-hover: #4F46E5;
-  --color-accent-rgb: 99, 102, 241;
-  
-  /* Status Colors */
-  --color-success: #10B981; /* Emerald Green */
-  --color-success-bg: rgba(16, 185, 129, 0.1);
-  --color-failure: #EF4444; /* Rose Red */
-  --color-failure-bg: rgba(239, 68, 68, 0.1);
-  --color-skipped: #F59E0B; /* Amber Yellow */
-  --color-skipped-bg: rgba(245, 158, 11, 0.1);
-  --color-info: #3B82F6; /* Sky Blue */
+  --text-primary: #1C1917;
+  --text-secondary: #57534E;
+  --text-muted: #8A8580;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
+  /* Accents: black CTAs (keychain.com style) + gold highlight */
+  --color-accent: #1C1917;
+  --color-accent-hover: #000000;
+  --color-accent-rgb: 28, 25, 23;
+  --color-highlight: #A16207;
+
+  /* Ink overlays used for subtle fills on light surfaces */
+  --surface-1: rgba(28, 25, 23, 0.03);
+  --surface-2: rgba(28, 25, 23, 0.06);
+  --surface-3: rgba(28, 25, 23, 0.1);
+
+  /* Status Colors - validated for CVD separation & contrast on light surface */
+  --color-success: #15803D;
+  --color-success-bg: rgba(21, 128, 61, 0.1);
+  --color-failure: #E11D48;
+  --color-failure-bg: rgba(225, 29, 72, 0.08);
+  --color-skipped: #A16207;
+  --color-skipped-bg: rgba(161, 98, 7, 0.1);
+  --color-info: #1D4ED8;
+
+  --shadow-sm: 0 1px 2px 0 rgba(28, 25, 23, 0.05);
+  --shadow-md: 0 2px 8px -2px rgba(28, 25, 23, 0.08);
+  --shadow-lg: 0 8px 24px -6px rgba(28, 25, 23, 0.1);
+  --shadow-glow: 0 4px 16px rgba(28, 25, 23, 0.1);
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -61,13 +67,13 @@ body {
   min-height: 100vh;
 }
 
-/* Background Glowing Orbs */
+/* Background warmth */
 .bg-glow-orb {
   position: absolute;
   width: 500px;
   height: 500px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0) 70%);
+  background: radial-gradient(circle, rgba(161, 98, 7, 0.06) 0%, rgba(161, 98, 7, 0) 70%);
   z-index: -1;
   pointer-events: none;
   filter: blur(40px);
@@ -83,16 +89,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(28, 25, 23, 0.18);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(28, 25, 23, 0.32);
 }
 
 /* Interactive elements */
@@ -108,15 +114,13 @@ button {
   transition: all var(--transition-fast);
 }
 
-/* Glassmorphic Cards */
+/* Cards */
 .card {
   background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 1.5rem;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
   transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
 }
 
@@ -129,7 +133,7 @@ button {
 .card-clickable:hover {
   transform: translateY(-2px);
   border-color: var(--border-color-glow);
-  box-shadow: var(--shadow-glow);
+  box-shadow: var(--shadow-lg);
 }
 
 .card-clickable:active {
@@ -151,10 +155,10 @@ button {
 
 .input-field:focus {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 0 0 2px rgba(28, 25, 23, 0.12);
 }
 
-/* Primary Button */
+/* Primary Button - black pill, keychain.com style */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -166,8 +170,8 @@ button {
   font-size: 0.95rem;
   text-decoration: none;
   background: var(--color-accent);
-  color: white;
-  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+  color: #FFFFFF;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn:hover {
@@ -182,24 +186,25 @@ button {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
   box-shadow: none;
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--text-secondary);
+  background: var(--surface-1);
+  border-color: var(--border-color-glow);
 }
 
 .btn-danger {
   background: var(--color-failure);
-  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.25);
 }
 
 .btn-danger:hover {
-  background: #DC2626;
+  background: #BE123C;
 }
 
 /* Grid & Layout System */
@@ -218,7 +223,7 @@ h1, h2, h3, h4 {
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, #FFF 0%, #A5B4FC 100%);
+  background: linear-gradient(135deg, #1C1917 0%, #A16207 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -227,11 +232,6 @@ h1, h2, h3, h4 {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 10px rgba(99, 102, 241, 0.1); }
-  50% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
 }
 
 .animate-fade-in {
@@ -261,7 +261,7 @@ h1, h2, h3, h4 {
 .badge-success { background: var(--color-success-bg); color: var(--color-success); }
 .badge-failure { background: var(--color-failure-bg); color: var(--color-failure); }
 .badge-skipped { background: var(--color-skipped-bg); color: var(--color-skipped); }
-.badge-indigo { background: rgba(99, 102, 241, 0.15); color: #C7D2FE; }
+.badge-indigo { background: var(--surface-2); color: var(--text-secondary); }
 
 /* Keyboard focus */
 button:focus-visible,
@@ -285,7 +285,7 @@ input:focus-visible {
 }
 
 .stat-tile {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-1);
   border: 1px solid var(--border-color);
   padding: 0.75rem 0.5rem;
   border-radius: var(--radius-sm);
@@ -314,7 +314,7 @@ input:focus-visible {
 .stat-tile--success .stat-tile__value { color: var(--color-success); }
 .stat-tile--failure .stat-tile__value { color: var(--color-failure); }
 .stat-tile--skipped .stat-tile__value { color: var(--color-skipped); }
-.stat-tile--accent .stat-tile__value { color: #A5B4FC; }
+.stat-tile--accent .stat-tile__value { color: var(--color-highlight); }
 
 /* Sidebar list rows (workflows, jobs) */
 .list-row {
@@ -333,14 +333,14 @@ input:focus-visible {
 }
 
 .list-row:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-1);
   color: var(--text-primary);
 }
 
 .list-row.is-active {
-  background: rgba(99, 102, 241, 0.1);
+  background: var(--surface-2);
   border-color: var(--border-color-glow);
-  color: white;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -401,7 +401,7 @@ input:focus-visible {
 }
 
 .fav-toggle:hover {
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(161, 98, 7, 0.12);
 }
 
 /* Run history rows */
@@ -411,7 +411,7 @@ input:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  background: rgba(255, 255, 255, 0.01);
+  background: var(--bg-card);
   border-left-width: 4px;
   border-left-style: solid;
 }
@@ -457,7 +457,7 @@ input:focus-visible {
 }
 
 .hbar-row:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-1);
 }
 
 .hbar-row__label {
@@ -508,9 +508,9 @@ input:focus-visible {
   position: absolute;
   left: 150px;
   bottom: calc(100% + 4px);
-  background: rgba(15, 23, 42, 0.97);
+  background: var(--bg-card);
   border: 1px solid var(--border-color-glow);
-  box-shadow: var(--shadow-glow);
+  box-shadow: var(--shadow-lg);
   border-radius: 6px;
   padding: 0.5rem 0.75rem;
   z-index: 40;
@@ -544,29 +544,29 @@ input:focus-visible {
   font-size: 0.72rem;
   font-weight: 600;
   border: 1px solid var(--border-color);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-card);
   color: var(--text-secondary);
   transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 
 .filter-chip:hover {
-  border-color: var(--text-muted);
+  border-color: var(--border-color-glow);
   color: var(--text-primary);
 }
 
 .filter-chip.is-active {
-  background: rgba(99, 102, 241, 0.12);
+  background: var(--surface-2);
   border-color: var(--border-color-glow);
-  color: white;
+  color: var(--text-primary);
 }
 
-.filter-chip--failed.is-active { background: var(--color-failure-bg); border-color: rgba(239, 68, 68, 0.35); }
-.filter-chip--passed.is-active { background: var(--color-success-bg); border-color: rgba(16, 185, 129, 0.35); }
-.filter-chip--skipped.is-active { background: var(--color-skipped-bg); border-color: rgba(245, 158, 11, 0.35); }
+.filter-chip--failed.is-active { background: var(--color-failure-bg); border-color: rgba(225, 29, 72, 0.35); }
+.filter-chip--passed.is-active { background: var(--color-success-bg); border-color: rgba(21, 128, 61, 0.35); }
+.filter-chip--skipped.is-active { background: var(--color-skipped-bg); border-color: rgba(161, 98, 7, 0.35); }
 
 .filter-chip__count {
   font-variant-numeric: tabular-nums;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-2);
   border-radius: var(--radius-full);
   padding: 0.05rem 0.4rem;
   font-size: 0.68rem;
@@ -580,13 +580,13 @@ input:focus-visible {
   width: 100%;
   padding: 0.4rem 0.5rem;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.01);
+  background: var(--surface-1);
   text-align: left;
   transition: background var(--transition-fast);
 }
 
 .test-row:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-2);
 }
 
 .test-row__main {
@@ -621,12 +621,13 @@ input:focus-visible {
   color: var(--text-muted);
 }
 
+/* Stack traces stay on a dark terminal surface */
 .test-row__error {
   font-family: var(--font-mono);
   font-size: 0.7rem;
-  color: #FCA5A5;
-  background: #070A12;
-  border: 1px solid rgba(239, 68, 68, 0.12);
+  color: #FDA4AF;
+  background: #1C1917;
+  border: 1px solid rgba(225, 29, 72, 0.25);
   border-radius: 6px;
   padding: 0.6rem 0.75rem;
   margin: 0.25rem 0 0.4rem 1.8rem;

@@ -81,7 +81,7 @@ Ask me anything about failures, performance hotspots, or differences between run
           marginLeft: 'auto',
           fontSize: '0.7rem',
           color: 'var(--color-accent)',
-          background: 'rgba(99, 102, 241, 0.1)',
+          background: 'var(--surface-2)',
           padding: '0.2rem 0.6rem',
           borderRadius: '4px',
           fontWeight: 600,
@@ -111,7 +111,7 @@ Ask me anything about failures, performance hotspots, or differences between run
             style={{
               alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
               maxWidth: '85%',
-              background: m.role === 'user' ? 'var(--color-accent)' : 'rgba(255,255,255,0.03)',
+              background: m.role === 'user' ? 'var(--color-accent)' : 'var(--surface-2)',
               border: m.role === 'user' ? 'none' : '1px solid var(--border-color)',
               color: m.role === 'user' ? '#FFF' : 'var(--text-primary)',
               borderRadius: '8px',
@@ -127,7 +127,7 @@ Ask me anything about failures, performance hotspots, or differences between run
         {isLoading && (
           <div style={{
             alignSelf: 'flex-start',
-            background: 'rgba(255,255,255,0.02)',
+            background: 'var(--surface-1)',
             border: '1px solid var(--border-color)',
             borderRadius: '8px',
             padding: '0.75rem 1rem',
@@ -158,7 +158,7 @@ Ask me anything about failures, performance hotspots, or differences between run
             fontSize: '0.75rem',
             padding: '0.35rem 0.75rem',
             borderRadius: '6px',
-            background: 'rgba(255,255,255,0.04)',
+            background: 'var(--surface-2)',
             border: '1px solid var(--border-color)',
             color: 'var(--text-secondary)'
           }}
@@ -173,7 +173,7 @@ Ask me anything about failures, performance hotspots, or differences between run
             fontSize: '0.75rem',
             padding: '0.35rem 0.75rem',
             borderRadius: '6px',
-            background: 'rgba(255,255,255,0.04)',
+            background: 'var(--surface-2)',
             border: '1px solid var(--border-color)',
             color: 'var(--text-secondary)'
           }}
@@ -189,7 +189,7 @@ Ask me anything about failures, performance hotspots, or differences between run
               fontSize: '0.75rem',
               padding: '0.35rem 0.75rem',
               borderRadius: '6px',
-              background: 'rgba(255,255,255,0.04)',
+              background: 'var(--surface-2)',
               border: '1px solid var(--border-color)',
               color: 'var(--text-secondary)'
             }}

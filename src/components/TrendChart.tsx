@@ -81,7 +81,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ runs, onSelectRun }) => 
                 borderRadius: '4px 4px 2px 2px',
                 overflow: 'hidden',
                 border: analyzed ? 'none' : '1px dashed var(--border-color)',
-                background: analyzed ? 'transparent' : 'rgba(255,255,255,0.015)',
+                background: analyzed ? 'transparent' : 'var(--surface-1)',
                 transition: 'transform 0.15s ease',
                 transform: isHovered ? 'scaleX(1.2)' : 'none'
               }}>
@@ -112,14 +112,14 @@ export const TrendChart: React.FC<TrendChartProps> = ({ runs, onSelectRun }) => 
 
               {isHovered && (
                 <div className="hbar-tooltip" style={{ left: '50%', transform: 'translateX(-50%)', bottom: `${columnHeight + 12}px` }}>
-                  <div style={{ fontWeight: 600, fontSize: '0.75rem', color: 'white', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.25rem', marginBottom: '0.1rem' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.75rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--surface-3)', paddingBottom: '0.25rem', marginBottom: '0.1rem' }}>
                     Run #{run.runNumber}{analyzed && s.passRate !== null ? ` · ${s.passRate}% pass` : ''}
                   </div>
                   {analyzed ? SERIES.map(series => (
                     <div key={series.key} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.7rem' }}>
                       <span style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: series.color, flexShrink: 0 }} />
                       <span style={{ color: 'var(--text-secondary)' }}>{series.name}:</span>
-                      <span className="tabular-nums" style={{ fontWeight: 600, color: 'white' }}>{s[series.key]}</span>
+                      <span className="tabular-nums" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{s[series.key]}</span>
                     </div>
                   )) : (
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Not analyzed yet — click Analyze history</span>

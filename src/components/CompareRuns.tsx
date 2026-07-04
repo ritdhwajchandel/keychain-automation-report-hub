@@ -116,7 +116,7 @@ export const CompareRuns: React.FC<CompareRunsProps> = ({ runA, runB }) => {
         
         {/* Run A Info */}
         <div style={{
-          background: 'rgba(255, 255, 255, 0.02)',
+          background: 'var(--surface-1)',
           border: '1px solid var(--border-color)',
           borderRadius: '8px',
           padding: '1rem',
@@ -141,7 +141,7 @@ export const CompareRuns: React.FC<CompareRunsProps> = ({ runA, runB }) => {
 
         {/* Run B Info */}
         <div style={{
-          background: 'rgba(255, 255, 255, 0.02)',
+          background: 'var(--surface-1)',
           border: '1px solid var(--border-color)',
           borderRadius: '8px',
           padding: '1rem',
@@ -169,7 +169,7 @@ export const CompareRuns: React.FC<CompareRunsProps> = ({ runA, runB }) => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
         
         {/* Total Tests comparison */}
-        <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
+        <div style={{ background: 'var(--surface-1)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>TOTAL TESTS</span>
           <div style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0.25rem 0' }}>{statsA.total} vs {statsB.total}</div>
           <span style={{ fontSize: '0.75rem', color: statsA.total - statsB.total >= 0 ? 'var(--color-success)' : 'var(--color-failure)' }}>
@@ -178,7 +178,7 @@ export const CompareRuns: React.FC<CompareRunsProps> = ({ runA, runB }) => {
         </div>
 
         {/* Passed comparison */}
-        <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
+        <div style={{ background: 'var(--surface-1)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>PASSED TESTS</span>
           <div style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0.25rem 0', color: 'var(--color-success)' }}>{statsA.passed} vs {statsB.passed}</div>
           <span style={{ fontSize: '0.75rem', color: passedDiff >= 0 ? 'var(--color-success)' : 'var(--color-failure)' }}>
@@ -187,7 +187,7 @@ export const CompareRuns: React.FC<CompareRunsProps> = ({ runA, runB }) => {
         </div>
 
         {/* Failed comparison */}
-        <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
+        <div style={{ background: 'var(--surface-1)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>FAILED TESTS</span>
           <div style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0.25rem 0', color: 'var(--color-failure)' }}>{statsA.failed} vs {statsB.failed}</div>
           <span style={{ fontSize: '0.75rem', color: failedDiff <= 0 ? 'var(--color-success)' : 'var(--color-failure)' }}>
@@ -196,7 +196,7 @@ export const CompareRuns: React.FC<CompareRunsProps> = ({ runA, runB }) => {
         </div>
 
         {/* Duration comparison */}
-        <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
+        <div style={{ background: 'var(--surface-1)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>EXECUTION DURATION</span>
           <div style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0.25rem 0' }}>{formatDuration(runA.durationSeconds)} vs {formatDuration(runB.durationSeconds)}</div>
           <span style={{ fontSize: '0.75rem', color: durationDiff <= 0 ? 'var(--color-success)' : 'var(--color-failure)' }}>
@@ -222,8 +222,8 @@ export const CompareRuns: React.FC<CompareRunsProps> = ({ runA, runB }) => {
               <div 
                 key={index}
                 style={{
-                  background: 'rgba(239, 68, 68, 0.03)',
-                  border: '1px solid rgba(239, 68, 68, 0.15)',
+                  background: 'rgba(225, 29, 72, 0.03)',
+                  border: '1px solid rgba(225, 29, 72, 0.15)',
                   borderRadius: '6px',
                   padding: '0.75rem 1rem'
                 }}
@@ -242,7 +242,7 @@ export const CompareRuns: React.FC<CompareRunsProps> = ({ runA, runB }) => {
                     color: '#FCA5A5',
                     overflowX: 'auto',
                     marginTop: '0.5rem',
-                    border: '1px solid rgba(255,255,255,0.02)'
+                    border: '1px solid var(--surface-1)'
                   }}>{reg.error}</pre>
                 )}
               </div>
@@ -267,8 +267,8 @@ export const CompareRuns: React.FC<CompareRunsProps> = ({ runA, runB }) => {
               <div 
                 key={index}
                 style={{
-                  background: 'rgba(16, 185, 129, 0.03)',
-                  border: '1px solid rgba(16, 185, 129, 0.15)',
+                  background: 'rgba(21, 128, 61, 0.03)',
+                  border: '1px solid rgba(21, 128, 61, 0.15)',
                   borderRadius: '6px',
                   padding: '0.75rem 1rem',
                   display: 'flex',

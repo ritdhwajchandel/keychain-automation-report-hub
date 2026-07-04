@@ -60,7 +60,7 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, isBookmarked, onToggle
           </button>
         </div>
 
-        <h3 style={{ fontSize: '1.15rem', color: 'white', marginBottom: '0.5rem', wordBreak: 'break-all' }}>
+        <h3 style={{ fontSize: '1.15rem', color: 'var(--text-primary)', marginBottom: '0.5rem', wordBreak: 'break-all' }}>
           {repo.name}
         </h3>
         

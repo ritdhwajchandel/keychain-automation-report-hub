@@ -495,31 +495,49 @@ export default function App() {
         {/* VIEW 1: HOME PAGE */}
         {!selectedRepo ? (
           <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem', marginTop: '1rem' }}>
-            <div style={{
-              background: 'radial-gradient(100% 100% at 50% 0%, rgba(99, 102, 241, 0.08) 0%, rgba(0, 0, 0, 0) 100%)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '16px',
-              padding: '2.5rem 2rem',
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '1rem',
-              boxShadow: 'var(--shadow-glow)'
-            }}>
-              <h1 style={{ fontSize: '2.5rem', fontWeight: 800, fontFamily: 'var(--font-display)' }} className="text-gradient">
-                Keychain Automation Console
-              </h1>
-              <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', fontSize: '0.95rem', lineHeight: '1.6' }}>
-                Drill down from GitHub Action Workflows into specific project execution jobs, verify CLI running steps, and inspect calculations from Allure reports.
-              </p>
-              
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                <button className="btn" onClick={() => setShowAddRepoModal(true)}>
-                  <Plus size={16} /> Add Repository
+            {bookmarkedRepos.length === 0 ? (
+              /* First-run hero: full welcome panel */
+              <div style={{
+                background: 'radial-gradient(100% 100% at 50% 0%, rgba(161, 98, 7, 0.05) 0%, rgba(0, 0, 0, 0) 100%)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '16px',
+                padding: '2.5rem 2rem',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '1rem',
+                boxShadow: 'var(--shadow-glow)'
+              }}>
+                <h1 style={{ fontSize: '2.5rem', fontWeight: 800, fontFamily: 'var(--font-display)' }} className="text-gradient">
+                  Keychain Automation Console
+                </h1>
+                <p style={{ color: 'var(--text-secondary)', maxWidth: '600px', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                  Drill down from GitHub Action Workflows into specific project execution jobs, verify CLI running steps, and inspect calculations from Allure reports.
+                </p>
+
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                  <button className="btn" onClick={() => setShowAddRepoModal(true)}>
+                    <Plus size={16} /> Add Repository
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Repos already added: compact header, dashboard gets the space */
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h1 style={{ fontSize: '1.5rem', fontWeight: 700, fontFamily: 'var(--font-display)' }}>
+                    Keychain Automation Console
+                  </h1>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.15rem' }}>
+                    Test report analysis across your automation repositories
+                  </p>
+                </div>
+                <button className="btn" style={{ padding: '0.55rem 1.1rem', fontSize: '0.85rem' }} onClick={() => setShowAddRepoModal(true)}>
+                  <Plus size={15} /> Add Repository
                 </button>
               </div>
-            </div>
+            )}
 
             {/* Health dashboard for starred repos' favorited workflows */}
             <FavoritesDashboard
@@ -565,7 +583,7 @@ export default function App() {
                             <Star size={16} fill="var(--color-skipped)" />
                           </button>
                         </div>
-                        <h3 style={{ fontSize: '1.2rem', color: 'white', marginBottom: '0.5rem' }}>{repo.name}</h3>
+                        <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{repo.name}</h3>
                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{repo.description}</p>
                       </div>
                       <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
@@ -728,7 +746,7 @@ export default function App() {
                             }`}
                           >
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxWidth: '70%' }}>
-                              <strong style={{ fontSize: '0.95rem', color: 'white' }}>{run.name}</strong>
+                              <strong style={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>{run.name}</strong>
                               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 commit <code>{run.commitSha}</code> &bull; {run.commitMessage}
                               </span>
@@ -776,7 +794,7 @@ export default function App() {
                           <ArrowLeft size={14} /> Back to Runs
                         </button>
                         
-                        <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.03)', padding: '0.2rem', borderRadius: '8px' }}>
+                        <div style={{ display: 'flex', background: 'var(--surface-2)', padding: '0.2rem', borderRadius: '8px' }}>
                           {([
                             { key: 'overview', label: 'Job Details' },
                             { key: 'insights', label: 'Insights' },
@@ -813,7 +831,7 @@ export default function App() {
                           
                           {/* Run Execution Summary Header (Screenshot 2 Top Info Reference) */}
                           <div style={{
-                            background: 'rgba(255, 255, 255, 0.01)',
+                            background: 'var(--surface-1)',
                             border: '1px solid var(--border-color)',
                             borderRadius: '12px',
                             padding: '1.25rem',
@@ -826,7 +844,7 @@ export default function App() {
                           }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                               <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Workflow Pipeline Execution</span>
-                              <h2 style={{ fontSize: '1.25rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <h2 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 {selectedRun.name}
                                 <span className={`badge ${selectedRun.conclusion === 'success' ? 'badge-success' : 'badge-failure'}`} style={{ fontSize: '0.65rem' }}>
                                   {selectedRun.conclusion}
@@ -949,7 +967,7 @@ export default function App() {
                                   {/* Allure Report Summary title and KPIs */}
                                   <div className="card" style={{ padding: '1.25rem' }}>
                                     <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
-                                      <h3 style={{ fontSize: '0.95rem', color: 'white' }}>Consolidated Allure Execution Calculation</h3>
+                                      <h3 style={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>Consolidated Allure Execution Calculation</h3>
                                     </div>
 
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center', justifyContent: 'center' }}>
@@ -1009,13 +1027,13 @@ export default function App() {
                                       </h3>
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '350px', overflowY: 'auto' }}>
                                         {runFailuresList.map((fail, fIdx) => (
-                                          <div key={fIdx} style={{ background: 'rgba(239, 68, 68, 0.02)', border: '1px solid rgba(239, 68, 68, 0.1)', borderRadius: '6px', padding: '0.75rem' }}>
+                                          <div key={fIdx} style={{ background: 'rgba(225, 29, 72, 0.02)', border: '1px solid rgba(225, 29, 72, 0.1)', borderRadius: '6px', padding: '0.75rem' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                                              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'white' }}>{fail.jobName}</span>
+                                              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>{fail.jobName}</span>
                                               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{fail.testName}</span>
                                             </div>
                                             {fail.error && (
-                                              <pre style={{ fontSize: '0.7rem', color: '#FCA5A5', overflowX: 'auto', fontFamily: 'var(--font-mono)', padding: '0.25rem', background: 'black', borderRadius: '4px', marginTop: '0.25rem' }}>
+                                              <pre style={{ fontSize: '0.7rem', color: '#FCA5A5', overflowX: 'auto', fontFamily: 'var(--font-mono)', padding: '0.25rem', background: '#1C1917', borderRadius: '4px', marginTop: '0.25rem' }}>
                                                 {fail.error}
                                               </pre>
                                             )}
@@ -1034,7 +1052,7 @@ export default function App() {
                                    {/* Steps list */}
                                    <div className="card" style={{ padding: '1rem' }}>
                                      <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                       <h3 style={{ fontSize: '0.9rem', color: 'white', display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
+                                       <h3 style={{ fontSize: '0.9rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
                                          {renderConclusionIcon(currentJob.status, 16)}
                                          <code style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentJob.name}</code>
                                          <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>steps</span>
@@ -1053,7 +1071,7 @@ export default function App() {
                                              justifyContent: 'space-between',
                                              fontSize: '0.75rem',
                                              padding: '0.35rem 0.5rem',
-                                             background: 'rgba(255,255,255,0.01)',
+                                             background: 'var(--surface-1)',
                                              borderRadius: '4px',
                                              borderLeft: `2px solid ${step.status === 'success' ? 'var(--color-success)' : step.status === 'failure' ? 'var(--color-failure)' : 'var(--text-muted)'}`
                                            }}
@@ -1068,7 +1086,7 @@ export default function App() {
                                    {/* Allure Report calculation */}
                                    <div className="card" style={{ padding: '1rem' }}>
                                      <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
-                                       <h3 style={{ fontSize: '0.9rem', color: 'white' }}>Allure Results Calculation</h3>
+                                       <h3 style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Allure Results Calculation</h3>
                                      </div>
 
                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'center' }}>
@@ -1108,7 +1126,7 @@ export default function App() {
                                    {/* Individual test results for this project */}
                                    <div className="card" style={{ padding: '1rem' }}>
                                      <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                                       <h3 style={{ fontSize: '0.9rem', color: 'white' }}>
+                                       <h3 style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>
                                          Test Results · <code style={{ fontSize: '0.8rem' }}>{currentJob.project}</code>
                                        </h3>
                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -1122,7 +1140,7 @@ export default function App() {
                                    <div className="card" style={{ padding: '1rem' }}>
                                      <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                        <Terminal size={16} style={{ color: 'var(--color-success)' }} />
-                                       <h3 style={{ fontSize: '0.9rem', color: 'white' }}>Terminal Run Console Logs</h3>
+                                       <h3 style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>Terminal Run Console Logs</h3>
                                      </div>
                                      <pre style={{
                                        fontFamily: 'var(--font-mono)',
@@ -1166,12 +1184,12 @@ export default function App() {
                               value={compareRunId}
                               onChange={(e) => setCompareRunId(e.target.value)}
                               style={{
-                                background: 'rgba(255,255,255,0.05)',
+                                background: 'var(--surface-2)',
                                 border: '1px solid var(--border-color)',
                                 borderRadius: '6px',
                                 padding: '0.4rem 0.8rem',
                                 fontSize: '0.85rem',
-                                color: 'white',
+                                color: 'var(--text-primary)',
                                 outline: 'none',
                                 cursor: 'pointer'
                               }}
@@ -1179,7 +1197,7 @@ export default function App() {
                               {runs
                                 .filter(r => r.id !== selectedRun.id)
                                 .map(run => (
-                                  <option key={run.id} value={run.id} style={{ background: '#0B0F19' }}>
+                                  <option key={run.id} value={run.id} style={{ background: '#FFFFFF' }}>
                                     Run #{run.runNumber} - {run.conclusion === 'success' ? '✅' : '❌'} ({run.commitSha})
                                   </option>
                                 ))}
@@ -1231,7 +1249,7 @@ export default function App() {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(5, 8, 16, 0.85)',
+          backgroundColor: 'rgba(28, 25, 23, 0.45)',
           backdropFilter: 'blur(8px)',
           display: 'flex',
           alignItems: 'center',
@@ -1283,7 +1301,7 @@ export default function App() {
                       key={repo.id}
                       onClick={() => handleAddRepoSelect(repo)}
                       style={{
-                        background: 'rgba(255, 255, 255, 0.02)',
+                        background: 'var(--surface-1)',
                         border: '1px solid var(--border-color)',
                         borderRadius: '8px',
                         padding: '0.75rem 1rem',
@@ -1295,15 +1313,15 @@ export default function App() {
                       }}
                       onMouseOver={(e) => {
                         e.currentTarget.style.borderColor = 'var(--color-accent)';
-                        e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)';
+                        e.currentTarget.style.backgroundColor = 'var(--surface-2)';
                       }}
                       onMouseOut={(e) => {
                         e.currentTarget.style.borderColor = 'var(--border-color)';
-                        e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)';
+                        e.currentTarget.style.backgroundColor = 'var(--surface-1)';
                       }}
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxWidth: '75%' }}>
-                        <strong style={{ fontSize: '0.9rem', color: 'white' }}>{repo.fullName}</strong>
+                        <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{repo.fullName}</strong>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {repo.description}
                         </span>
@@ -1334,7 +1352,7 @@ export default function App() {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(5, 8, 16, 0.85)',
+          backgroundColor: 'rgba(28, 25, 23, 0.45)',
           backdropFilter: 'blur(8px)',
           display: 'flex',
           alignItems: 'center',

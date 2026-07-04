@@ -43,23 +43,17 @@ export const Navbar: React.FC<NavbarProps> = ({
     }}>
       {/* Title Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }} onClick={() => window.location.reload()}>
-        <div style={{
-          width: '32px',
-          height: '32px',
-          borderRadius: '8px',
-          background: 'linear-gradient(135deg, var(--color-accent) 0%, #A5B4FC 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#FFF',
-          fontWeight: 800,
-          fontSize: '1rem',
-          boxShadow: '0 0 15px rgba(99, 102, 241, 0.4)'
+        <img src="/keychain-logo.svg" alt="Keychain" style={{ height: '24px', display: 'block' }} />
+        <span style={{
+          borderLeft: '1px solid var(--border-color-glow)',
+          paddingLeft: '0.75rem',
+          fontSize: '0.95rem',
+          fontWeight: 600,
+          letterSpacing: '-0.01em',
+          fontFamily: 'var(--font-display)',
+          color: 'var(--text-secondary)'
         }}>
-          K
-        </div>
-        <span style={{ fontSize: '1.2rem', fontWeight: 700, letterSpacing: '-0.02em', fontFamily: 'var(--font-display)' }}>
-          Keychain<span style={{ color: 'var(--color-accent)' }}>Automation</span> Console
+          Automation Console
         </span>
       </div>
 
@@ -73,7 +67,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             value={currentModel}
             onChange={(e) => onModelChange(e.target.value as LLMModel)}
             style={{
-              background: 'rgba(255,255,255,0.05)',
+              background: 'var(--surface-2)',
               border: '1px solid var(--border-color)',
               borderRadius: '6px',
               padding: '0.4rem 0.8rem',
@@ -88,10 +82,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--border-color-glow)'}
             onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
           >
-            <option value="local-llama" style={{ background: '#0B0F19' }}>🦙 Local LLaMA (Free)</option>
-            <option value="gemini" style={{ background: '#0B0F19' }}>♊ Gemini Flash</option>
-            <option value="openai" style={{ background: '#0B0F19' }}>🤖 OpenAI GPT-4o</option>
-            <option value="anthropic" style={{ background: '#0B0F19' }}>🛡️ Anthropic Claude</option>
+            <option value="local-llama" style={{ background: '#FFFFFF' }}>🦙 Local LLaMA (Free)</option>
+            <option value="gemini" style={{ background: '#FFFFFF' }}>♊ Gemini Flash</option>
+            <option value="openai" style={{ background: '#FFFFFF' }}>🤖 OpenAI GPT-4o</option>
+            <option value="anthropic" style={{ background: '#FFFFFF' }}>🛡️ Anthropic Claude</option>
           </select>
         </div>
 
@@ -106,7 +100,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             height: '36px',
             borderRadius: '8px',
             border: '1px solid var(--border-color)',
-            background: 'rgba(255,255,255,0.03)',
+            background: 'var(--surface-2)',
             color: 'var(--text-secondary)'
           }}
           onMouseOver={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--border-color-glow)'; }}

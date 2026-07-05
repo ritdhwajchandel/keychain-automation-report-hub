@@ -412,6 +412,28 @@ input:focus-visible {
   background: rgba(161, 98, 7, 0.12);
 }
 
+/* Debug-artifact links (screenshots, traces, job logs) on failed tests */
+.artifact-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 5px;
+  border: 1px solid rgba(29, 78, 216, 0.25);
+  background: rgba(29, 78, 216, 0.06);
+  color: var(--color-info);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.artifact-link:hover {
+  background: rgba(29, 78, 216, 0.12);
+  border-color: rgba(29, 78, 216, 0.45);
+}
+
 /* Run history rows */
 .run-row {
   padding: 1rem;

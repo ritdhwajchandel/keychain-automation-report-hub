@@ -27,6 +27,16 @@ export interface JobExecution {
   durationSeconds: number;
   steps: JobStep[];
   allureReport: AllureReport;
+  htmlUrl?: string;        // GitHub job page URL
+}
+
+// A downloadable artifact attached to a run (Playwright report, traces, screenshots)
+export interface RunArtifact {
+  id: number;
+  name: string;            // e.g. "playwright-report-os-vendor", "traces-os-vendor"
+  url: string;             // browser URL to download the artifact
+  sizeInBytes: number;
+  expired: boolean;
 }
 
 export interface WorkflowRunReport {
@@ -44,6 +54,9 @@ export interface WorkflowRunReport {
   durationSeconds: number;
   createdAt: string;
   jobs: JobExecution[];
+  htmlUrl?: string;        // GitHub run page URL (artifacts listed at bottom)
+  repoFullName?: string;   // "owner/repo" — for building artifact/trace URLs
+  artifacts?: RunArtifact[]; // fetched lazily when the run is opened
 }
 
 export interface GitHubRepo {
@@ -479,9 +492,41 @@ function generateMockJobs(runId: string, _repoName: string, conclusion: string):
       status: jobStatus,
       durationSeconds: steps.reduce((sum, s) => sum + s.durationSeconds, 0),
       steps,
-      allureReport
+      allureReport,
+      htmlUrl: `https://github.com/${_repoName}/actions/runs/${runId}/job/${runId}_job_${idx}`
     };
   });
+}
+
+// Build plausible mock artifacts (one Playwright report + per-project traces for
+// projects that had failures) so the demo shows the debug-artifacts feature.
+function generateMockArtifacts(runId: string, fullName: string, jobs: JobExecution[]): RunArtifact[] {
+  const artifacts: RunArtifact[] = [];
+  let artifactId = parseInt(runId.replace(/\D/g, '').slice(-4) || '1000', 10) * 10;
+
+  // A consolidated HTML report artifact always present
+  artifacts.push({
+    id: artifactId++,
+    name: 'playwright-report',
+    url: `https://github.com/${fullName}/actions/runs/${runId}/artifacts/${artifactId - 1}`,
+    sizeInBytes: 4_200_000,
+    expired: false
+  });
+
+  // Per-project trace bundles for projects that had failing tests
+  jobs
+    .filter(j => j.name.startsWith('test (') && j.allureReport.failed > 0)
+    .forEach(j => {
+      artifacts.push({
+        id: artifactId++,
+        name: `traces-${j.project}`,
+        url: `https://github.com/${fullName}/actions/runs/${runId}/artifacts/${artifactId - 1}`,
+        sizeInBytes: 1_800_000,
+        expired: false
+      });
+    });
+
+  return artifacts;
 }
 
 // Generate deterministic mock workflow runs
@@ -517,7 +562,10 @@ function generateMockRuns(fullName: string): WorkflowRunReport[] {
       conclusion,
       durationSeconds: jobs.reduce((sum, j) => sum + j.durationSeconds, 0),
       createdAt: date.toISOString(),
-      jobs
+      jobs,
+      htmlUrl: `https://github.com/${fullName}/actions/runs/${runId}`,
+      repoFullName: fullName,
+      artifacts: generateMockArtifacts(runId, fullName, jobs)
     });
   }
 
@@ -908,7 +956,8 @@ export class GitHubService {
                 status: job.conclusion || 'queued',
                 durationSeconds: Math.round((new Date(job.completed_at).getTime() - new Date(job.started_at).getTime()) / 1000) || 60,
                 steps,
-                allureReport
+                allureReport,
+                htmlUrl: job.html_url
               };
             });
           }
@@ -933,7 +982,9 @@ export class GitHubService {
           conclusion: run.conclusion || 'neutral',
           durationSeconds: Math.round((new Date(run.updated_at).getTime() - new Date(run.created_at).getTime()) / 1000) || 120,
           createdAt: run.created_at,
-          jobs
+          jobs,
+          htmlUrl: run.html_url,
+          repoFullName
         };
       }));
 
@@ -943,6 +994,65 @@ export class GitHubService {
       return generateMockRuns(repoFullName);
     }
   }
+
+  // Fetch the downloadable artifacts (Playwright reports, traces, screenshots)
+  // attached to a run. Called lazily when a run is opened.
+  async getRunArtifacts(repoFullName: string, runId: string): Promise<RunArtifact[]> {
+    if (this.isMockMode) {
+      // Mock runs already carry their artifacts; nothing to fetch
+      return [];
+    }
+    try {
+      const [owner, name] = repoFullName.split('/');
+      const res = await fetch(`https://api.github.com/repos/${owner}/${name}/actions/runs/${runId}/artifacts`, {
+        headers: { Authorization: `token ${this.token}` }
+      });
+      if (!res.ok) throw new Error(`Artifacts fetch failed: ${res.status}`);
+      const data = await res.json();
+      return (data.artifacts || []).map((a: any) => ({
+        id: a.id,
+        name: a.name,
+        // Browser URL that downloads the artifact zip from the run page
+        url: `https://github.com/${owner}/${name}/actions/runs/${runId}/artifacts/${a.id}`,
+        sizeInBytes: a.size_in_bytes || 0,
+        expired: !!a.expired
+      }));
+    } catch (e) {
+      console.error('Failed to fetch run artifacts:', e);
+      return [];
+    }
+  }
 }
 
 export const githubService = new GitHubService();
+
+// Match a project to the artifacts most likely to hold its debug evidence.
+// Playwright typically uploads per-project trace/report bundles named with the
+// project (e.g. "traces-os-vendor"); a generic "playwright-report" is the
+// consolidated fallback that covers all projects.
+export function findArtifactsForProject(artifacts: RunArtifact[] | undefined, project: string): RunArtifact[] {
+  if (!artifacts || artifacts.length === 0) return [];
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const p = norm(project);
+  const specific = artifacts.filter(a => p && norm(a.name).includes(p));
+  if (specific.length > 0) return specific;
+  // Fall back to consolidated report/trace artifacts that cover every project
+  return artifacts.filter(a => /report|trace|screenshot|playwright/i.test(a.name));
+}
+
+// Is this artifact a trace bundle (openable in trace.playwright.dev)?
+export function isTraceArtifact(name: string): boolean {
+  return /trace/i.test(name);
+}
+
+export function formatBytes(bytes: number): string {
+  if (!bytes || bytes <= 0) return '';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit++;
+  }
+  return `${value.toFixed(value < 10 && unit > 0 ? 1 : 0)} ${units[unit]}`;
+}

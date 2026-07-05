@@ -7,15 +7,16 @@ import { TestList } from './components/TestList';
 import { TrendChart } from './components/TrendChart';
 import { Insights } from './components/Insights';
 import { AIChat } from './components/AIChat';
-import { githubService, parseLogsForTestCases, generateAllureReport } from './services/github';
+import { githubService, parseLogsForTestCases, generateAllureReport, findArtifactsForProject, isTraceArtifact, formatBytes } from './services/github';
 import type { GitHubRepo, WorkflowRunReport, GitHubWorkflow, JobExecution } from './services/github';
 import { getRunStats, isRunAnalyzed, findFlakyTests } from './services/insights';
 import { saveRunHistory, applyRunHistory } from './services/history';
 import { aiService } from './services/ai';
 import type { LLMModel } from './services/ai';
-import { 
+import {
   ArrowLeft, Search, Plus, RefreshCw, MessageSquare, PlayCircle, BarChart2, Terminal,
-  CheckCircle2, XCircle, AlertTriangle, HelpCircle, Star, Calendar, Clock, User, ArrowRight
+  CheckCircle2, XCircle, AlertTriangle, HelpCircle, Star, Calendar, Clock, User, ArrowRight,
+  ExternalLink, Camera, FileArchive, Package
 } from 'lucide-react';
 import './App.css';
 
@@ -145,6 +146,7 @@ export default function App() {
   useEffect(() => {
     if (selectedRun && selectedRepo) {
       fetchAndParseJobsLogs(selectedRun);
+      fetchRunArtifacts(selectedRun);
     }
   }, [selectedRun?.id]);
 
@@ -202,6 +204,21 @@ export default function App() {
       setActiveJobLogs('Failed to fetch logs for this job.');
     } finally {
       setIsLoadingLogs(false);
+    }
+  };
+
+  // Fetch downloadable debug artifacts (reports, traces, screenshots) for a run.
+  // Mock runs already carry their artifacts, so only real runs missing them fetch.
+  const fetchRunArtifacts = async (run: WorkflowRunReport) => {
+    if (!selectedRepo) return;
+    if (run.artifacts && run.artifacts.length > 0) return; // already have them
+    try {
+      const artifacts = await githubService.getRunArtifacts(selectedRepo.fullName, run.id);
+      if (artifacts.length === 0) return;
+      setRuns(prev => prev.map(r => (r.id === run.id ? { ...r, artifacts } : r)));
+      setSelectedRun(prev => (prev && prev.id === run.id ? { ...prev, artifacts } : prev));
+    } catch (e) {
+      console.error('Failed to fetch run artifacts:', e);
     }
   };
 
@@ -433,6 +450,37 @@ export default function App() {
     handleGithubStateChange();
   };
 
+  // Render debug-artifact links (screenshots/report + trace) for a failed test's
+  // project. Traces get a hint to open in trace.playwright.dev after download.
+  const renderArtifactLinks = (project: string) => {
+    const artifacts = findArtifactsForProject(selectedRun?.artifacts, project);
+    if (artifacts.length === 0) return null;
+    return (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.5rem' }}>
+        {artifacts.map(a => {
+          const trace = isTraceArtifact(a.name);
+          return (
+            <a
+              key={a.id}
+              href={a.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="artifact-link"
+              title={trace
+                ? `Download ${a.name} (${formatBytes(a.sizeInBytes)}) — unzip and open trace.zip at trace.playwright.dev`
+                : `Download ${a.name} (${formatBytes(a.sizeInBytes)}) — screenshots & HTML report`}
+            >
+              {trace ? <FileArchive size={11} /> : <Camera size={11} />}
+              {trace ? 'Trace' : 'Screenshots / Report'}
+              <span style={{ opacity: 0.6 }}>{formatBytes(a.sizeInBytes)}</span>
+              <ExternalLink size={10} />
+            </a>
+          );
+        })}
+      </div>
+    );
+  };
+
   const bookmarkedRepos = repos.filter(r => bookmarkedIds.includes(r.id));
   const comparisonRun = runs.find(r => r.id === compareRunId);
 
@@ -505,14 +553,16 @@ export default function App() {
 
   const getFailedTestsAcrossRun = (run: WorkflowRunReport | null) => {
     if (!run) return [];
-    const failures: { jobName: string; testName: string; error?: string }[] = [];
+    const failures: { jobName: string; project: string; testName: string; error?: string; jobUrl?: string }[] = [];
     run.jobs.forEach(job => {
       job.allureReport.tests.forEach(test => {
         if (test.status === 'failed') {
           failures.push({
             jobName: job.name,
+            project: job.project,
             testName: test.name,
-            error: test.error
+            error: test.error,
+            jobUrl: job.htmlUrl
           });
         }
       });
@@ -901,6 +951,32 @@ export default function App() {
                               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                                 commit <code>{selectedRun.commitSha}</code> &bull; triggered via {selectedRun.event} by @{selectedRun.triggerer}
                               </span>
+                              {/* GitHub deep-links: full run page + artifacts (screenshots/traces) */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                                {selectedRun.htmlUrl && (
+                                  <a
+                                    href={selectedRun.htmlUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="btn btn-secondary"
+                                    style={{ padding: '0.3rem 0.7rem', fontSize: '0.72rem', gap: '0.3rem' }}
+                                  >
+                                    <ExternalLink size={12} /> View run on GitHub
+                                  </a>
+                                )}
+                                {selectedRun.artifacts && selectedRun.artifacts.length > 0 && (
+                                  <a
+                                    href={`${selectedRun.htmlUrl || '#'}#artifacts`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="btn btn-secondary"
+                                    style={{ padding: '0.3rem 0.7rem', fontSize: '0.72rem', gap: '0.3rem' }}
+                                    title="Playwright reports, traces & screenshots attached to this run"
+                                  >
+                                    <Package size={12} /> {selectedRun.artifacts.length} artifact{selectedRun.artifacts.length > 1 ? 's' : ''}
+                                  </a>
+                                )}
+                              </div>
                             </div>
 
                             {/* Info metrics items */}
@@ -1111,6 +1187,21 @@ export default function App() {
                                                 {fail.error}
                                               </pre>
                                             )}
+                                            {/* Debug evidence: screenshots/trace artifacts + job logs on GitHub */}
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center', marginTop: '0.5rem' }}>
+                                              {renderArtifactLinks(fail.project)}
+                                              {fail.jobUrl && (
+                                                <a
+                                                  href={fail.jobUrl}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="artifact-link"
+                                                  title="Open this job's logs on GitHub"
+                                                >
+                                                  <Terminal size={11} /> Job logs <ExternalLink size={10} />
+                                                </a>
+                                              )}
+                                            </div>
                                           </div>
                                         ))}
                                       </div>
@@ -1135,6 +1226,24 @@ export default function App() {
                                          Executed in {formatDuration(currentJob.durationSeconds)}
                                        </span>
                                      </div>
+
+                                     {/* Debug artifacts + job logs for this project */}
+                                     {(currentJob.htmlUrl || findArtifactsForProject(selectedRun.artifacts, currentJob.project).length > 0) && (
+                                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                         {renderArtifactLinks(currentJob.project)}
+                                         {currentJob.htmlUrl && (
+                                           <a
+                                             href={currentJob.htmlUrl}
+                                             target="_blank"
+                                             rel="noopener noreferrer"
+                                             className="artifact-link"
+                                             title="Open this job on GitHub"
+                                           >
+                                             <ExternalLink size={11} /> View job on GitHub
+                                           </a>
+                                         )}
+                                       </div>
+                                     )}
 
                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                        {currentJob.steps.map((step, sIdx) => (

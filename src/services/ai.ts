@@ -205,43 +205,62 @@ export class AIService {
       return `❌ API Key for **${model.toUpperCase()}** is missing. Please configure it in the dashboard settings or switch back to the **Local LLaMA** model.`;
     }
 
-    // Build context with enhanced failure analysis instructions
+    // Build detailed context with all failure data explicitly visible
+    const allFailures = runData.jobs.flatMap(job =>
+      job.allureReport.tests
+        .filter(t => t.status === 'failed')
+        .map(t => ({
+          testName: t.name,
+          project: job.name.replace('test (', '').replace(')', ''),
+          jobName: job.name,
+          error: t.error || 'No error details captured',
+          duration: t.duration || 'N/A'
+        }))
+    );
+
     const contextText = `
-You are the AI analyst inside Keychain Automation Console, an expert on test automation and failure analysis.
-We are analyzing workflow run #${runData.runNumber} for repo "${runData.name}".
+ROLE: You are the AI Failure Analyst for Keychain Automation Console. Your ONLY job is to analyze the ACTUAL test failure data provided below.
 
-**ANALYSIS GUIDELINES:**
-When asked about failures, ALWAYS return data in structured tabular format with:
-1. Test Name | Project | Error Type | Root Cause | Frequency | Recommendation
-2. Group failures by pattern (timeout, assertion, setup, etc.)
-3. Identify similar error signatures and root causes
-4. Provide actionable recommendations per failure type
-5. Highlight if failures are isolated or systematic
-6. If comparing runs, show which issues are new/recurring/fixed
+RUN METADATA:
+- Run #${runData.runNumber} | Repo: "${runData.name}"
+- Triggered by: ${runData.triggerer} | Event: ${runData.event} | Duration: ${runData.durationSeconds}s
+- Conclusion: ${runData.conclusion}
+- STATS: ${runData.jobs.reduce((acc, j) => acc + j.allureReport.passed, 0)} PASSED | ${runData.jobs.reduce((acc, j) => acc + j.allureReport.failed, 0)} FAILED | ${runData.jobs.reduce((acc, j) => acc + j.allureReport.skipped, 0)} SKIPPED
 
-Metadata: Triggered by ${runData.triggerer} via ${runData.event}, Duration: ${runData.durationSeconds}s, Conclusion: ${runData.conclusion}.
-Overall Stats: ${runData.jobs.reduce((acc, j) => acc + j.allureReport.passed, 0)} passed, ${runData.jobs.reduce((acc, j) => acc + j.allureReport.failed, 0)} failed, ${runData.jobs.reduce((acc, j) => acc + j.allureReport.skipped, 0)} skipped.
+===== ALL TEST FAILURES (${allFailures.length} total) =====
+${allFailures.length === 0 ? 'NO FAILURES IN THIS RUN' : allFailures.map((f, i) => `
+${i + 1}. Test: ${f.testName}
+   Project: ${f.project}
+   Job: ${f.jobName}
+   Error: ${f.error.substring(0, 300)}${f.error.length > 300 ? '...' : ''}
+   Duration: ${f.duration}
+`).join('')}
 
-Jobs Data (JSON): ${JSON.stringify(runData.jobs.map(j => ({
-  name: j.name,
-  status: j.status,
-  duration: j.durationSeconds,
-  allurePassed: j.allureReport.passed,
-  allureFailed: j.allureReport.failed,
-  failures: j.allureReport.tests.filter(t => t.status === 'failed').map(t => ({
-    name: t.name,
-    error: t.error,
-    fullName: t.name
-  }))
-})))}
+${comparisonRun ? `
+===== COMPARISON WITH RUN #${comparisonRun.runNumber} =====
+${JSON.stringify(comparisonRun.jobs.map(j => ({
+  project: j.name.replace('test (', '').replace(')', ''),
+  passed: j.allureReport.passed,
+  failed: j.allureReport.failed,
+  failures: j.allureReport.tests.filter(t => t.status === 'failed').map(t => t.name)
+})), null, 2)}
+` : ''}
 
-${comparisonRun ? `Comparison Run #${comparisonRun.runNumber} Data: ${JSON.stringify(comparisonRun.jobs.map(j => ({
-  name: j.name,
-  status: j.status,
-  allurePassed: j.allureReport.passed,
-  allureFailed: j.allureReport.failed,
-  failures: j.allureReport.tests.filter(t => t.status === 'failed').map(t => ({name: t.name, error: t.error}))
-})))}` : ''}
+**MANDATORY RESPONSE FORMAT:**
+1. ALWAYS use tables/structured format (Markdown table preferred)
+2. Group failures by: Error Type (timeout, assertion, setup, network, etc)
+3. For each group: show test names, affected projects, root cause, recommendation
+4. Identify patterns: which errors appear in multiple projects? (indicates systemic issue)
+5. Highlight: are failures isolated to one project or widespread?
+6. If comparison run exists: mark each failure as NEW, RECURRING, or FIXED
+
+**YOUR INSTRUCTIONS:**
+- Answer ONLY based on the failure data above
+- If asked about failures, return a table analysis
+- If asked about patterns, group by error type and show affected tests
+- If asked about comparison, show new vs recurring vs fixed failures
+- Do NOT give generic advice - be specific to these failures
+- Do NOT ignore the error details - analyze them
     `;
 
     try {

@@ -152,8 +152,8 @@ Ask me anything about failures, performance hotspots, or differences between run
 
       {/* Quick suggestions */}
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', overflowX: 'auto', paddingBottom: '0.25rem' }}>
-        <button 
-          onClick={() => handleQuickPrompt('List the test failures and explain their errors')}
+        <button
+          onClick={() => handleQuickPrompt('Create a table of all failed tests with: test name, project, error type, root cause, and recommendations. Group by similar error patterns.')}
           style={{
             fontSize: '0.75rem',
             padding: '0.35rem 0.75rem',
@@ -165,9 +165,24 @@ Ask me anything about failures, performance hotspots, or differences between run
           onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--color-accent)'}
           onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
         >
-          🔍 Explain failures
+          🔍 Failure analysis table
         </button>
-        <button 
+        <button
+          onClick={() => handleQuickPrompt('Identify error patterns: group failures by error type (timeout, assertion, setup, network, etc). For each pattern, show: affected tests, frequency, common projects, and root cause hypothesis.')}
+          style={{
+            fontSize: '0.75rem',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '6px',
+            background: 'var(--surface-2)',
+            border: '1px solid var(--border-color)',
+            color: 'var(--text-secondary)'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--color-accent)'}
+          onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
+        >
+          🔗 Error patterns
+        </button>
+        <button
           onClick={() => handleQuickPrompt('Which test suites or runs were the slowest?')}
           style={{
             fontSize: '0.75rem',
@@ -183,8 +198,8 @@ Ask me anything about failures, performance hotspots, or differences between run
           ⚡ Slowest tests
         </button>
         {comparisonRun && (
-          <button 
-            onClick={() => handleQuickPrompt(`Compare active run ${selectedRun.runNumber} and run ${comparisonRun.runNumber} and list regressions`)}
+          <button
+            onClick={() => handleQuickPrompt(`Compare run ${selectedRun.runNumber} vs run ${comparisonRun.runNumber}. Create a table showing: new failures (regressions), fixed failures, recurring failures. Include error details and affected projects.`)}
             style={{
               fontSize: '0.75rem',
               padding: '0.35rem 0.75rem',
@@ -196,7 +211,7 @@ Ask me anything about failures, performance hotspots, or differences between run
             onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--color-accent)'}
             onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
           >
-            🔄 Compare runs
+            🔄 Regressions vs fixes
           </button>
         )}
       </div>

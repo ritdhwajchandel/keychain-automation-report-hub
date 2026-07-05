@@ -205,25 +205,42 @@ export class AIService {
       return `❌ API Key for **${model.toUpperCase()}** is missing. Please configure it in the dashboard settings or switch back to the **Local LLaMA** model.`;
     }
 
-    // Build context
+    // Build context with enhanced failure analysis instructions
     const contextText = `
-You are the AI analyst inside Keychain Automation Console, an expert on test automation reports.
+You are the AI analyst inside Keychain Automation Console, an expert on test automation and failure analysis.
 We are analyzing workflow run #${runData.runNumber} for repo "${runData.name}".
+
+**ANALYSIS GUIDELINES:**
+When asked about failures, ALWAYS return data in structured tabular format with:
+1. Test Name | Project | Error Type | Root Cause | Frequency | Recommendation
+2. Group failures by pattern (timeout, assertion, setup, etc.)
+3. Identify similar error signatures and root causes
+4. Provide actionable recommendations per failure type
+5. Highlight if failures are isolated or systematic
+6. If comparing runs, show which issues are new/recurring/fixed
+
 Metadata: Triggered by ${runData.triggerer} via ${runData.event}, Duration: ${runData.durationSeconds}s, Conclusion: ${runData.conclusion}.
 Overall Stats: ${runData.jobs.reduce((acc, j) => acc + j.allureReport.passed, 0)} passed, ${runData.jobs.reduce((acc, j) => acc + j.allureReport.failed, 0)} failed, ${runData.jobs.reduce((acc, j) => acc + j.allureReport.skipped, 0)} skipped.
+
 Jobs Data (JSON): ${JSON.stringify(runData.jobs.map(j => ({
-  name: j.name, 
-  status: j.status, 
+  name: j.name,
+  status: j.status,
   duration: j.durationSeconds,
   allurePassed: j.allureReport.passed,
   allureFailed: j.allureReport.failed,
-  failures: j.allureReport.tests.filter(t => t.status === 'failed').map(t => ({name: t.name, error: t.error}))
+  failures: j.allureReport.tests.filter(t => t.status === 'failed').map(t => ({
+    name: t.name,
+    error: t.error,
+    fullName: t.name
+  }))
 })))}
+
 ${comparisonRun ? `Comparison Run #${comparisonRun.runNumber} Data: ${JSON.stringify(comparisonRun.jobs.map(j => ({
   name: j.name,
   status: j.status,
   allurePassed: j.allureReport.passed,
-  allureFailed: j.allureReport.failed
+  allureFailed: j.allureReport.failed,
+  failures: j.allureReport.tests.filter(t => t.status === 'failed').map(t => ({name: t.name, error: t.error}))
 })))}` : ''}
     `;
 

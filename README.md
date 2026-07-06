@@ -1,9 +1,15 @@
 # Keychain Automation Console
 
+### 🌐 Live app: **https://ritdhwajchandel.github.io/keychain-automation-report-hub/**
+
 A single pane of glass for GitHub Actions test runs. Point it at your automation
 repos and it turns raw workflow logs into accurate pass/fail reports, per-project
 test lists, failure categories, flaky-test detection, and run-over-run trends —
 no reporter plugins or CI changes required.
+
+It runs **entirely in your browser** — no backend. Your GitHub token is kept in
+your browser's `localStorage` and is only ever sent directly to the GitHub API.
+Open the link above to try it instantly in demo mode (sample data, no login).
 
 ## What it does
 
@@ -31,13 +37,17 @@ no reporter plugins or CI changes required.
 
 ## Getting started
 
+The fastest way is the hosted app —
+**[open it here](https://ritdhwajchandel.github.io/keychain-automation-report-hub/)** —
+no install required. To run it locally instead:
+
 ```bash
 npm install
 npm run dev        # http://localhost:5173
 ```
 
-The app starts in **demo mode** with realistic mock data so you can explore
-every feature without credentials.
+Either way the app starts in **demo mode** with realistic mock data so you can
+explore every feature without credentials.
 
 ### Connect GitHub
 

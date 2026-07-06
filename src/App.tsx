@@ -455,24 +455,43 @@ export default function App() {
   const renderArtifactLinks = (project: string) => {
     const artifacts = findArtifactsForProject(selectedRun?.artifacts, project);
     if (artifacts.length === 0) return null;
+
+    // Collapse to a single Report button and a single Trace button. Sharded
+    // runs upload several report/trace bundles; showing one per bundle produces
+    // duplicate "Screenshots / Report" buttons. If a group has one artifact we
+    // link straight to it; if several, we link to the run's artifacts section.
+    const traces = artifacts.filter(a => isTraceArtifact(a.name));
+    const reports = artifacts.filter(a => !isTraceArtifact(a.name));
+    const runArtifactsAnchor = `${selectedRun?.htmlUrl || '#'}#artifacts`;
+
+    const groups = [
+      { items: reports, trace: false, label: 'Screenshots / Report' },
+      { items: traces, trace: true, label: 'Trace' }
+    ].filter(g => g.items.length > 0);
+
     return (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.5rem' }}>
-        {artifacts.map(a => {
-          const trace = isTraceArtifact(a.name);
+        {groups.map(({ items, trace, label }) => {
+          const single = items.length === 1 ? items[0] : null;
+          const href = single ? single.url : runArtifactsAnchor;
+          const totalBytes = items.reduce((sum, a) => sum + a.sizeInBytes, 0);
           return (
             <a
-              key={a.id}
-              href={a.url}
+              key={label}
+              href={href}
               target="_blank"
               rel="noopener noreferrer"
               className="artifact-link"
-              title={trace
-                ? `Download ${a.name} (${formatBytes(a.sizeInBytes)}) — unzip and open trace.zip at trace.playwright.dev`
-                : `Download ${a.name} (${formatBytes(a.sizeInBytes)}) — screenshots & HTML report`}
+              title={single
+                ? (trace
+                    ? `Download ${single.name} (${formatBytes(single.sizeInBytes)}) — unzip and open trace.zip at trace.playwright.dev`
+                    : `Download ${single.name} (${formatBytes(single.sizeInBytes)}) — screenshots & HTML report`)
+                : `${items.length} ${trace ? 'trace' : 'report'} bundles — open the run's artifacts to pick one`}
             >
               {trace ? <FileArchive size={11} /> : <Camera size={11} />}
-              {trace ? 'Trace' : 'Screenshots / Report'}
-              <span style={{ opacity: 0.6 }}>{formatBytes(a.sizeInBytes)}</span>
+              {label}
+              {items.length > 1 && <span style={{ opacity: 0.6 }}>×{items.length}</span>}
+              {single && <span style={{ opacity: 0.6 }}>{formatBytes(totalBytes)}</span>}
               <ExternalLink size={10} />
             </a>
           );

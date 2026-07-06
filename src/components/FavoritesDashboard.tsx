@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { githubService } from '../services/github';
 import type { GitHubRepo, GitHubWorkflow, WorkflowRunReport } from '../services/github';
-import { applyRunHistory } from '../services/history';
+import { applyRunHistory, saveRunHistory } from '../services/history';
 import { getRunStats, isRunAnalyzed } from '../services/insights';
 import { TrendChart } from './TrendChart';
 import {
-  Star, RefreshCw, CheckCircle2, XCircle, AlertTriangle, GitCompareArrows, ArrowRight, Calendar
+  Star, RefreshCw, CheckCircle2, XCircle, AlertTriangle, GitCompareArrows, ArrowRight, Calendar, BarChart3, Check
 } from 'lucide-react';
 
 interface FavoritesDashboardProps {
@@ -34,6 +34,39 @@ const conclusionIcon = (conclusion: string) => {
 export const FavoritesDashboard: React.FC<FavoritesDashboardProps> = ({ repos, favoriteWorkflows, onOpen }) => {
   const [entries, setEntries] = useState<DashboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  // Per-card analysis progress (keyed by entry.key); null/absent = not running
+  const [analyzing, setAnalyzing] = useState<Record<string, { done: number; total: number } | null>>({});
+
+  // Enrich every un-analyzed run for one favorite workflow, right from the home
+  // dashboard, so its trend and pass rates populate without opening the workflow.
+  // Results are persisted so they survive reloads and match the drill-in view.
+  const analyzeEntry = async (entry: DashboardEntry) => {
+    if (analyzing[entry.key]) return;
+    const targets = entry.runs.filter(r => r.jobs.length > 0 && !isRunAnalyzed(r));
+    if (targets.length === 0) return;
+    setAnalyzing(prev => ({ ...prev, [entry.key]: { done: 0, total: targets.length } }));
+
+    let updatedRuns = [...entry.runs];
+    for (let i = 0; i < targets.length; i++) {
+      const run = targets[i];
+      const updatedJobs = await Promise.all(run.jobs.map(async (job) => {
+        if (!job.name.startsWith('test (')) return job;
+        try {
+          const allureReport = await githubService.enrichJobData(entry.repo.fullName, job, run.id);
+          return { ...job, allureReport };
+        } catch (e) {
+          console.error('Dashboard analyze error on job:', job.name, e);
+          return job;
+        }
+      }));
+      updatedRuns = updatedRuns.map(r => (r.id === run.id ? { ...r, jobs: updatedJobs } : r));
+      setEntries(prev => prev.map(e => (e.key === entry.key ? { ...e, runs: updatedRuns } : e)));
+      setAnalyzing(prev => ({ ...prev, [entry.key]: { done: i + 1, total: targets.length } }));
+    }
+
+    saveRunHistory(entry.repo.fullName, entry.workflow.id, updatedRuns);
+    setAnalyzing(prev => ({ ...prev, [entry.key]: null }));
+  };
 
   const favSignature = JSON.stringify(
     repos.map(r => [r.fullName, favoriteWorkflows[r.fullName] || []])
@@ -97,6 +130,10 @@ export const FavoritesDashboard: React.FC<FavoritesDashboardProps> = ({ repos, f
         const rates = analyzed.map(r => getRunStats(r).passRate).filter((r): r is number => r !== null);
         const avgRate = rates.length ? Math.round(rates.reduce((s, r) => s + r, 0) / rates.length) : null;
 
+        const progress = analyzing[entry.key];
+        const unanalyzedCount = entry.runs.filter(r => r.jobs.length > 0 && !isRunAnalyzed(r)).length;
+        const fullyAnalyzed = unanalyzedCount === 0 && analyzed.length > 0;
+
         return (
           <div key={entry.key} className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {/* Card header */}
@@ -108,7 +145,7 @@ export const FavoritesDashboard: React.FC<FavoritesDashboardProps> = ({ repos, f
                 </h3>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{entry.repo.fullName}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
                 {latest && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                     {conclusionIcon(latest.conclusion)}
@@ -119,6 +156,30 @@ export const FavoritesDashboard: React.FC<FavoritesDashboardProps> = ({ repos, f
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                     Avg <strong className="tabular-nums" style={{ color: 'var(--color-highlight)' }}>{avgRate}%</strong>
                   </div>
+                )}
+                {/* Analyze history: enrich all runs so the trend + pass rates populate */}
+                {fullyAnalyzed ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: 'var(--color-success)', fontWeight: 600 }}>
+                    <Check size={13} /> History analyzed
+                  </span>
+                ) : (
+                  <button
+                    className="btn"
+                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+                    onClick={() => analyzeEntry(entry)}
+                    disabled={!!progress || unanalyzedCount === 0}
+                    title="Parse logs for every run so trends and pass rates appear"
+                  >
+                    {progress ? (
+                      <>
+                        <RefreshCw className="animate-spin" size={12} /> Analyzing {progress.done}/{progress.total}…
+                      </>
+                    ) : (
+                      <>
+                        <BarChart3 size={12} /> Analyze history
+                      </>
+                    )}
+                  </button>
                 )}
                 <button
                   className="btn btn-secondary"

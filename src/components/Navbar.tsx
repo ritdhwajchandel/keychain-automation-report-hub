@@ -43,7 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     }}>
       {/* Title Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }} onClick={() => window.location.reload()}>
-        <img src="/keychain-logo.svg" alt="Keychain" style={{ height: '24px', display: 'block' }} />
+        <img src={`${import.meta.env.BASE_URL}keychain-logo.svg`} alt="Keychain" style={{ height: '24px', display: 'block' }} />
         <span style={{
           borderLeft: '1px solid var(--border-color-glow)',
           paddingLeft: '0.75rem',

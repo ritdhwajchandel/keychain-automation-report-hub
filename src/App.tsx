@@ -7,7 +7,7 @@ import { TestList } from './components/TestList';
 import { TrendChart } from './components/TrendChart';
 import { Insights } from './components/Insights';
 import { AIChat } from './components/AIChat';
-import { githubService, parseLogsForTestCases, generateAllureReport, findArtifactsForProject, isTraceArtifact, formatBytes } from './services/github';
+import { githubService, parseLogsForTestCases, findArtifactsForProject, isTraceArtifact, formatBytes } from './services/github';
 import type { GitHubRepo, WorkflowRunReport, GitHubWorkflow, JobExecution } from './services/github';
 import { getRunStats, isRunAnalyzed, findFlakyTests } from './services/insights';
 import { saveRunHistory, applyRunHistory } from './services/history';
@@ -16,7 +16,7 @@ import type { LLMModel } from './services/ai';
 import {
   ArrowLeft, Search, Plus, RefreshCw, MessageSquare, PlayCircle, BarChart2, Terminal,
   CheckCircle2, XCircle, AlertTriangle, HelpCircle, Star, Calendar, Clock, User, ArrowRight,
-  ExternalLink, Camera, FileArchive, Package
+  ExternalLink, Camera, FileArchive, Package, ShieldCheck
 } from 'lucide-react';
 import './App.css';
 
@@ -267,25 +267,25 @@ export default function App() {
   // already-analyzed runs are skipped (per-job results are cached in the service).
   // Refresh a specific running job's details from GitHub
   const refreshJobDetails = async (jobId: string) => {
-    if (!selectedRun) return;
+    if (!selectedRun || !selectedRepo) return;
     try {
       setIsLoadingLogs(true);
       const jobToRefresh = selectedRun.jobs.find(j => j.id === jobId);
       if (!jobToRefresh) return;
 
-      // Fetch fresh logs for this job
-      const freshLogs = await githubService.getJobLogs(selectedRun.id, jobId, jobToRefresh.name, jobToRefresh.status, selectedRun.id);
-
-      // Parse fresh logs for test results and status updates
+      // Fetch fresh logs for this job and parse real test results from them
+      const freshLogs = await githubService.getJobLogs(selectedRepo.fullName, jobId, jobToRefresh.name, jobToRefresh.status, selectedRun.id);
       const freshTests = parseLogsForTestCases(freshLogs) || [];
-      const freshReport = generateAllureReport(jobToRefresh.name, jobToRefresh.status, jobId);
 
-      // Update the job with fresh data
+      // Build the report purely from parsed data — never fabricated
       const updatedJob = {
         ...jobToRefresh,
         allureReport: {
-          ...freshReport,
-          tests: freshTests.length > 0 ? freshTests : freshReport.tests
+          passed: freshTests.filter(t => t.status === 'passed').length,
+          failed: freshTests.filter(t => t.status === 'failed').length,
+          skipped: freshTests.filter(t => t.status === 'skipped').length,
+          total: freshTests.length,
+          tests: freshTests
         }
       };
 
@@ -608,9 +608,45 @@ export default function App() {
       />
 
       <main className="main-content">
-        
+
         {/* VIEW 1: HOME PAGE */}
         {!selectedRepo ? (
+          !githubService.getToken() ? (
+            /* Not connected: GitHub auth gate. No data is shown until the user
+               provides a token — the app has no built-in/sample data. */
+            <div className="animate-fade-in" style={{
+              background: 'radial-gradient(100% 100% at 50% 0%, rgba(161, 98, 7, 0.05) 0%, rgba(0, 0, 0, 0) 100%)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '3rem 2rem',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '1rem',
+              marginTop: '1rem',
+              boxShadow: 'var(--shadow-glow)'
+            }}>
+              <h1 style={{ fontSize: '2.5rem', fontWeight: 800, fontFamily: 'var(--font-display)' }} className="text-gradient">
+                Keychain Automation Console
+              </h1>
+              <p style={{ color: 'var(--text-secondary)', maxWidth: '580px', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                Turn your GitHub Actions test runs into accurate pass/fail reports, failure
+                categories, flaky-test detection, and run-over-run trends. Connect your GitHub
+                account to get started — the console reads your workflow runs on demand.
+              </p>
+              <button className="btn" style={{ padding: '0.7rem 1.4rem' }} onClick={() => setShowSettingsModal(true)}>
+                Connect GitHub
+              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: 'var(--text-muted)', maxWidth: '520px', marginTop: '0.25rem' }}>
+                <ShieldCheck size={14} style={{ flexShrink: 0, color: 'var(--color-success)' }} />
+                <span>
+                  Runs entirely in your browser. Your token needs only <strong>Actions</strong> +{' '}
+                  <strong>Checks</strong> read access and is stored locally — it's never sent anywhere but GitHub.
+                </span>
+              </div>
+            </div>
+          ) : (
           <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem', marginTop: '1rem' }}>
             {bookmarkedRepos.length === 0 ? (
               /* First-run hero: full welcome panel */
@@ -714,8 +750,9 @@ export default function App() {
               )}
             </div>
           </div>
+          )
         ) : (
-          
+
           /* VIEW 2: DUAL WORKFLOWS & EXECUTION DASHBOARD */
           <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             
@@ -1462,13 +1499,14 @@ export default function App() {
           <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '640px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 style={{ fontSize: '1.35rem', fontFamily: 'var(--font-display)' }}>Browse Repositories</h2>
-              <button 
+              <button
                 onClick={() => setShowAddRepoModal(false)}
                 style={{ color: 'var(--text-secondary)', fontSize: '1.5rem', cursor: 'pointer' }}
               >
                 &times;
               </button>
             </div>
+
 
             <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '0.5rem' }}>
               <div style={{ position: 'relative', flex: 1 }}>

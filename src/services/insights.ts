@@ -9,8 +9,8 @@ export function isPlaceholderTest(name: string): boolean {
 }
 
 // Reduce a full Playwright test id to its human part for display:
-//   "[os-vendor] › tests/os/vendor/vendor-management-p1.spec.ts:23:3 › @P1 Vendor Management › @VND-007 Create a vendor"
-//   -> "@P1 Vendor Management › @VND-007 Create a vendor"
+//   "[checkout] › tests/e2e/checkout/checkout-flow-p1.spec.ts:23:3 › @P1 Checkout Flow › @VND-007 Create a vendor"
+//   -> "@P1 Checkout Flow › @VND-007 Create a vendor"
 // The project is rendered separately in the UI and the file:line stays
 // available via the tooltip (which shows the full name).
 export function displayTestName(name: string): string {

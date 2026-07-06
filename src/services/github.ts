@@ -33,7 +33,7 @@ export interface JobExecution {
 // A downloadable artifact attached to a run (Playwright report, traces, screenshots)
 export interface RunArtifact {
   id: number;
-  name: string;            // e.g. "playwright-report-os-vendor", "traces-os-vendor"
+  name: string;            // e.g. "playwright-report-checkout", "traces-checkout"
   url: string;             // browser URL to download the artifact
   sizeInBytes: number;
   expired: boolean;
@@ -46,7 +46,7 @@ export interface WorkflowRunReport {
   workflowName: string;    // e.g. "Daily Full Regression"
   workflowFile: string;    // e.g. "daily-full-regression.yml"
   event: string;           // e.g. "schedule"
-  triggerer: string;       // e.g. "shuvamk"
+  triggerer: string;       // e.g. "demo-user"
   commitSha: string;
   commitMessage: string;
   status: string;          // e.g. "completed"
@@ -104,35 +104,6 @@ function cleanLogText(logText: string): string {
   // Format: "2024-06-24T12:00:20.1234567Z " at start of line
   cleaned = cleaned.replace(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z\s*/gm, '');
   return cleaned;
-}
-
-// Build AllureReport from parsed stats and project name
-function buildAllureFromStats(stats: ParsedStats, project: string): AllureReport {
-  const tests: TestCase[] = [];
-  const safeName = project.replace(/[^a-zA-Z0-9]/g, '_');
-  for (let i = 0; i < stats.failed; i++) {
-    tests.push({
-      name: `${safeName}_failed_test_${i + 1}`,
-      status: 'failed',
-      duration: 0,
-      error: `Test failure in project ${project}`
-    });
-  }
-  for (let i = 0; i < stats.skipped; i++) {
-    tests.push({
-      name: `${safeName}_skipped_test_${i + 1}`,
-      status: 'skipped',
-      duration: 0
-    });
-  }
-  for (let i = 0; i < stats.passed; i++) {
-    tests.push({
-      name: `${safeName}_passed_test_${i + 1}`,
-      status: 'passed',
-      duration: 0
-    });
-  }
-  return { ...stats, tests };
 }
 
 // Parse logs text to extract accurate test counts
@@ -252,9 +223,9 @@ export function parseLogsForTestCounts(logText: string): ParsedStats | null {
 }
 
 // Parse individual test result lines from logs (Playwright list reporter style):
-//   "  ✓  4 [os-vendor] › tests/vendor.spec.ts:21:3 › creates vendor (3.2s)"
-//   "  ✘  5 [os-vendor] › tests/vendor.spec.ts:40:3 › deletes vendor (5.1s)"
-//   "  -  6 [os-vendor] › tests/vendor.spec.ts:60:3 › archived flow"
+//   "  ✓  4 [checkout] › tests/vendor.spec.ts:21:3 › creates order (3.2s)"
+//   "  ✘  5 [checkout] › tests/vendor.spec.ts:40:3 › cancels order (5.1s)"
+//   "  -  6 [checkout] › tests/vendor.spec.ts:60:3 › archived flow"
 // Retried tests appear multiple times; the last occurrence wins.
 export function parseLogsForTestCases(logText: string): TestCase[] | null {
   if (!logText) return null;
@@ -374,204 +345,6 @@ export function parseLogsForTestCases(logText: string): TestCase[] | null {
   return byName.size > 0 ? Array.from(byName.values()) : null;
 }
 
-// Generate realistic deterministic Allure test results based on job name and status
-export function generateAllureReport(jobName: string, status: string, seedInput: string): AllureReport {
-  if (jobName === 'auth' || jobName === 'report' || !jobName.startsWith('test (')) {
-    return { passed: 0, failed: 0, skipped: 0, total: 0, tests: [] };
-  }
-
-  let hash = 5381;
-  for (let i = 0; i < seedInput.length; i++) {
-    hash = ((hash << 5) + hash) + seedInput.charCodeAt(i);
-  }
-  const seed = Math.abs(hash);
-
-  const cleanName = jobName.replace('test (', '').replace(')', '');
-  
-  // Custom test totals per project (differs based on seed)
-  const total = 10 + (seed % 26);
-  const isFailed = status === 'failure';
-  const skipped = seed % 3;
-  let failed = 0;
-  if (isFailed) {
-    failed = 1 + (seed % 3);
-  }
-  const passed = Math.max(0, total - failed - skipped);
-
-  const tests: TestCase[] = [];
-  for (let i = 1; i <= total; i++) {
-    let testStatus: 'passed' | 'failed' | 'skipped' = 'passed';
-    let error: string | undefined;
-
-    if (i <= failed) {
-      testStatus = 'failed';
-      const errors = [
-        `AssertionError: expected API response code 200 but got 500 (Internal Server Error)\n  at /tests/project-${cleanName}/endpoints.spec.ts:42`,
-        `TimeoutError: waiting for Playwright locator 'button[type="submit"]' to be visible (exceeded 30000ms)\n  at /tests/project-${cleanName}/login.spec.ts:18`,
-        `TypeError: Cannot read properties of undefined (reading 'body')\n  at /tests/project-${cleanName}/api-helpers.ts:114`
-      ];
-      error = errors[(seed + i) % errors.length];
-    } else if (i > failed && i <= failed + skipped) {
-      testStatus = 'skipped';
-    }
-
-    tests.push({
-      name: `verify_project_${cleanName.replace(/[^a-zA-Z0-9]/g, '_')}_scenario_${i}`,
-      status: testStatus,
-      duration: 100 + ((seed * i) % 1800),
-      error
-    });
-  }
-
-  return { passed, failed, skipped, total, tests };
-}
-
-// Mock Workflows
-export const MOCK_WORKFLOWS: GitHubWorkflow[] = [
-  { id: 201, name: 'Daily Full Regression', path: '.github/workflows/daily-full-regression.yml', state: 'active' },
-  { id: 202, name: 'CI', path: '.github/workflows/ci.yml', state: 'active' },
-  { id: 203, name: 'PR Checks', path: '.github/workflows/pr-checks.yml', state: 'active' },
-  { id: 204, name: 'Run Regression Tests', path: '.github/workflows/regression-tests.yml', state: 'active' },
-  { id: 205, name: 'Sync features to Gherkin Studio', path: '.github/workflows/gherkin-sync.yml', state: 'active' },
-  { id: 206, name: 'pages-build-deployment', path: '.github/workflows/pages.yml', state: 'active' }
-];
-
-// Helper to generate mock jobs list
-function generateMockJobs(runId: string, _repoName: string, conclusion: string): JobExecution[] {
-  const seed = parseInt(runId.replace(/\D/g, '').substring(0, 5) || '12345', 10);
-  
-  const jobProjectNames = [
-    'auth',
-    'test (os-health)',
-    'test (os-inventory)',
-    'test (os-items-skus)',
-    'test (os-purchasing)',
-    'test (os-vendor)',
-    'test (os-companies)',
-    'test (os-production)',
-    'test (os-operator-mode)',
-    'test (os-settings)',
-    'test (os-food-safety)',
-    'test (os-documents)',
-    'test (os-multi-facility)',
-    'test (os-traceability)',
-    'report'
-  ];
-
-  return jobProjectNames.map((jobName, idx) => {
-    let jobStatus: 'success' | 'failure' | 'skipped' | 'in_progress' = 'success';
-    // Latest run (12) has one in_progress job for demonstration
-    if (runId.endsWith('12') && idx === 3) {
-      jobStatus = 'in_progress';
-    } else if (conclusion === 'failure') {
-      const isFailedJob = (seed % 3 === 0 && idx === 9) || (seed % 4 === 0 && idx === 13) || (idx === 14);
-      if (isFailedJob) {
-        jobStatus = 'failure';
-      }
-    }
-
-    const cleanProject = jobName.replace('test (', '').replace(')', '');
-    const steps: JobStep[] = [
-      { name: 'Set up job', status: 'success', durationSeconds: 2 },
-      { name: 'Checkout code', status: 'success', durationSeconds: 0 },
-      { name: 'Set up Node.js', status: 'success', durationSeconds: 3 },
-      { name: 'Install dependencies', status: 'success', durationSeconds: idx === 0 ? 15 : 3 },
-      { name: `Run project ${cleanProject}`, status: jobStatus, durationSeconds: 10 + ((seed + idx) % 40) },
-      { name: 'Stage blob report', status: jobStatus, durationSeconds: 0 },
-      { name: 'Upload blob report', status: jobStatus, durationSeconds: 0 },
-      { name: 'Upload allure results', status: jobStatus, durationSeconds: 1 },
-      { name: 'Complete job', status: jobStatus, durationSeconds: 0 }
-    ];
-
-    const allureReport = generateAllureReport(jobName, jobStatus, `${runId}_job_${idx}`);
-
-    return {
-      id: `${runId}_job_${idx}`,
-      name: jobName,
-      project: cleanProject,
-      status: jobStatus,
-      durationSeconds: steps.reduce((sum, s) => sum + s.durationSeconds, 0),
-      steps,
-      allureReport,
-      htmlUrl: `https://github.com/${_repoName}/actions/runs/${runId}/job/${runId}_job_${idx}`
-    };
-  });
-}
-
-// Build plausible mock artifacts (one Playwright report + per-project traces for
-// projects that had failures) so the demo shows the debug-artifacts feature.
-function generateMockArtifacts(runId: string, fullName: string, jobs: JobExecution[]): RunArtifact[] {
-  const artifacts: RunArtifact[] = [];
-  let artifactId = parseInt(runId.replace(/\D/g, '').slice(-4) || '1000', 10) * 10;
-
-  // A consolidated HTML report artifact always present
-  artifacts.push({
-    id: artifactId++,
-    name: 'playwright-report',
-    url: `https://github.com/${fullName}/actions/runs/${runId}/artifacts/${artifactId - 1}`,
-    sizeInBytes: 4_200_000,
-    expired: false
-  });
-
-  // Per-project trace bundles for projects that had failing tests
-  jobs
-    .filter(j => j.name.startsWith('test (') && j.allureReport.failed > 0)
-    .forEach(j => {
-      artifacts.push({
-        id: artifactId++,
-        name: `traces-${j.project}`,
-        url: `https://github.com/${fullName}/actions/runs/${runId}/artifacts/${artifactId - 1}`,
-        sizeInBytes: 1_800_000,
-        expired: false
-      });
-    });
-
-  return artifacts;
-}
-
-// Generate deterministic mock workflow runs
-const mockWorkflowRunsCache: Record<string, WorkflowRunReport[]> = {};
-
-function generateMockRuns(fullName: string): WorkflowRunReport[] {
-  if (mockWorkflowRunsCache[fullName]) return mockWorkflowRunsCache[fullName];
-
-  const runs: WorkflowRunReport[] = [];
-  const baseTime = new Date();
-  
-  for (let i = 0; i < 12; i++) {
-    const runNumber = 12 - i;
-    const runId = `19803${runNumber}`;
-    const date = new Date(baseTime.getTime() - i * 12 * 3600 * 1000);
-    
-    const conclusion = (i === 0 || i === 1 || i === 2 || i === 5 || i === 8) ? 'failure' : 'success';
-    const jobs = generateMockJobs(runId, fullName.split('/')[1], conclusion);
-
-    runs.push({
-      id: runId,
-      runNumber,
-      name: `Daily Full Regression (uat) #${runNumber}`,
-      workflowName: 'Daily Full Regression',
-      workflowFile: 'daily-full-regression.yml',
-      event: i % 3 === 0 ? 'schedule' : 'workflow_dispatch',
-      triggerer: i % 2 === 0 ? 'shuvamk' : 'github-actions[bot]',
-      commitSha: Math.random().toString(16).substring(2, 9),
-      commitMessage: i % 2 === 0
-        ? 'feat: updated service endpoints schema'
-        : 'fix: solve payment timeout regressions\n\nRoot cause: the gateway client reused a stale connection pool after\nfailover, so requests queued past the 30s budget.\n\n- bump pool eviction to 5s idle\n- add retry with jitter on ECONNRESET\n- extend payment e2e coverage for degraded-gateway mode\n\nRefs: PAY-2214, PAY-2218',
-      status: 'completed',
-      conclusion,
-      durationSeconds: jobs.reduce((sum, j) => sum + j.durationSeconds, 0),
-      createdAt: date.toISOString(),
-      jobs,
-      htmlUrl: `https://github.com/${fullName}/actions/runs/${runId}`,
-      repoFullName: fullName,
-      artifacts: generateMockArtifacts(runId, fullName, jobs)
-    });
-  }
-
-  mockWorkflowRunsCache[fullName] = runs;
-  return runs;
-}
 
 export class GitHubService {
   private token: string | null = null;
@@ -606,8 +379,8 @@ export class GitHubService {
   }
 
   async getUserInfo() {
-    if (this.isMockMode) {
-      return { login: 'shuvamk', name: 'Shuvam K', avatarUrl: 'https://avatars.githubusercontent.com/u/9919?v=4' };
+    if (!this.token) {
+      return { login: '', name: '', avatarUrl: '' };
     }
     try {
       const res = await fetch('https://api.github.com/user', {
@@ -618,38 +391,12 @@ export class GitHubService {
       return { login: data.login, name: data.name || data.login, avatarUrl: data.avatar_url };
     } catch (e) {
       console.error(e);
-      return { login: 'shuvamk', name: 'Shuvam K (Auth Error)', avatarUrl: 'https://avatars.githubusercontent.com/u/9919?v=4' };
+      return { login: '', name: '', avatarUrl: '' };
     }
   }
 
   async getRepositories(query?: string): Promise<GitHubRepo[]> {
-    const mockList: GitHubRepo[] = [
-      {
-        id: 401,
-        name: 'keychain-testing',
-        fullName: 'atlas-tech-inc/keychain-testing',
-        description: 'End to End automation regression suites for Keychain ecosystem.',
-        stars: 310,
-        forks: 48,
-        owner: { login: 'atlas-tech-inc', avatarUrl: 'https://avatars.githubusercontent.com/u/9919?v=4' }
-      },
-      {
-        id: 402,
-        name: 'web-application-platform',
-        fullName: 'acme-inc/web-application-platform',
-        description: 'Core microservices and Playwright test layouts.',
-        stars: 1240,
-        forks: 312,
-        owner: { login: 'acme-inc', avatarUrl: 'https://avatars.githubusercontent.com/u/9919?v=4' }
-      }
-    ];
-
-    if (this.isMockMode) {
-      await new Promise(r => setTimeout(r, 400));
-      if (!query) return mockList;
-      return mockList.filter(r => r.name.toLowerCase().includes(query.toLowerCase()));
-    }
-
+    if (!this.token) return [];
     try {
       let url = 'https://api.github.com/user/repos?sort=updated&per_page=30';
       if (query) {
@@ -669,14 +416,13 @@ export class GitHubService {
         owner: { login: r.owner.login, avatarUrl: r.owner.avatar_url }
       }));
     } catch (e) {
-      return mockList;
+      console.error('Failed to fetch repositories:', e);
+      return [];
     }
   }
 
   async getWorkflows(repoFullName: string): Promise<GitHubWorkflow[]> {
-    if (this.isMockMode) {
-      return MOCK_WORKFLOWS;
-    }
+    if (!this.token) return [];
     try {
       const [owner, name] = repoFullName.split('/');
       const res = await fetch(`https://api.github.com/repos/${owner}/${name}/actions/workflows`, {
@@ -691,49 +437,14 @@ export class GitHubService {
         state: w.state
       }));
     } catch (e) {
-      return MOCK_WORKFLOWS;
+      console.error('Failed to fetch workflows:', e);
+      return [];
     }
   }
 
   // Get job logs text
-  async getJobLogs(repoFullName: string, jobId: string, jobName: string, status: string, runId: string): Promise<string> {
-    if (this.isMockMode) {
-      await new Promise(r => setTimeout(r, 450));
-      const allure = generateAllureReport(jobName, status, `${runId}_job_${jobId}`);
-      const cleanProject = jobName.replace('test (', '').replace(')', '');
-      
-      let logs = `
-2026-06-24T12:00:01Z [system] Setup job runners
-2026-06-24T12:00:02Z [git] Checking out repository commit
-2026-06-24T12:00:03Z [node] Node environment initialized (version: 20.10.0)
-2026-06-24T12:00:05Z [npm] Installing packages: Playwright test libraries
-2026-06-24T12:00:15Z [playwright] Executing e2e project target: ${cleanProject}
-2026-06-24T12:00:16Z [playwright] Running tests with Playwright runner...
-`;
-
-      // Print tests
-      allure.tests.forEach((test, idx) => {
-        const time = (100 + (idx * 50)) / 1000;
-        if (test.status === 'passed') {
-          logs += `2026-06-24T12:00:18Z [playwright]   ✓  ${test.name} (${time}s)\n`;
-        } else if (test.status === 'skipped') {
-          logs += `2026-06-24T12:00:18Z [playwright]   -  ${test.name} (skipped)\n`;
-        } else {
-          logs += `2026-06-24T12:00:19Z [playwright]   ×  ${test.name} (${time}s)\n${test.error}\n`;
-        }
-      });
-
-      logs += `
-2026-06-24T12:00:20Z [playwright] Final test suite outcome:
-2026-06-24T12:00:20Z [playwright]   ${allure.passed} passed
-2026-06-24T12:00:20Z [playwright]   ${allure.failed} failed
-2026-06-24T12:00:20Z [playwright]   ${allure.skipped} skipped
-2026-06-24T12:00:21Z [allure] Uploading results artifact folder to pipeline storage
-2026-06-24T12:00:22Z [system] Completed job execution task.
-`;
-      return logs;
-    }
-
+  async getJobLogs(repoFullName: string, jobId: string, _jobName: string, _status: string, _runId: string): Promise<string> {
+    if (!this.token) return '';
     try {
       const [owner, name] = repoFullName.split('/');
       const res = await fetch(`https://api.github.com/repos/${owner}/${name}/actions/jobs/${jobId}/logs`, {
@@ -749,7 +460,7 @@ export class GitHubService {
 
   // Fetch check run annotations for a specific job (real test results and failures)
   async getJobAnnotations(repoFullName: string, jobId: string): Promise<GitHubAnnotation[]> {
-    if (this.isMockMode) return [];
+    if (!this.token) return [];
     try {
       const [owner, name] = repoFullName.split('/');
       const res = await fetch(
@@ -779,26 +490,11 @@ export class GitHubService {
     const cleanProject = job.project;
     const safeName = cleanProject.replace(/[^a-zA-Z0-9]/g, '_');
 
-    if (this.isMockMode) {
-      // Mock mode: fetch mock logs and parse them for counts + test names
-      try {
-        const logs = await this.getJobLogs(repoFullName, job.id, job.name, job.status, runId);
-        const stats = parseLogsForTestCounts(logs);
-        if (stats) {
-          const parsedTests = parseLogsForTestCases(logs);
-          const report = parsedTests && parsedTests.length > 0
-            ? { ...stats, tests: parsedTests }
-            : buildAllureFromStats(stats, cleanProject);
-          this.enrichedJobCache.set(cacheKey, report);
-          return report;
-        }
-      } catch (e) {
-        console.warn('Mock log parse failed:', e);
-      }
+    if (!this.token) {
       return job.allureReport;
     }
 
-    // Real mode: fetch annotations and logs in parallel for accurate data
+    // Fetch annotations and logs in parallel for accurate data
     const [annotationsResult, logsResult] = await Promise.allSettled([
       this.getJobAnnotations(repoFullName, job.id),
       this.getJobLogs(repoFullName, job.id, job.name, job.status, runId)
@@ -914,11 +610,7 @@ export class GitHubService {
   }
 
   async getWorkflowRuns(repoFullName: string, workflowIdOrPath: string | number): Promise<WorkflowRunReport[]> {
-    if (this.isMockMode) {
-      await new Promise(r => setTimeout(r, 400));
-      return generateMockRuns(repoFullName);
-    }
-
+    if (!this.token) return [];
     try {
       const [owner, name] = repoFullName.split('/');
       const res = await fetch(`https://api.github.com/repos/${owner}/${name}/actions/workflows/${workflowIdOrPath}/runs?per_page=15`, {
@@ -990,18 +682,15 @@ export class GitHubService {
 
       return results;
     } catch (e) {
-      console.error(e);
-      return generateMockRuns(repoFullName);
+      console.error('Failed to fetch workflow runs:', e);
+      return [];
     }
   }
 
   // Fetch the downloadable artifacts (Playwright reports, traces, screenshots)
   // attached to a run. Called lazily when a run is opened.
   async getRunArtifacts(repoFullName: string, runId: string): Promise<RunArtifact[]> {
-    if (this.isMockMode) {
-      // Mock runs already carry their artifacts; nothing to fetch
-      return [];
-    }
+    if (!this.token) return [];
     try {
       const [owner, name] = repoFullName.split('/');
       const res = await fetch(`https://api.github.com/repos/${owner}/${name}/actions/runs/${runId}/artifacts`, {
@@ -1028,7 +717,7 @@ export const githubService = new GitHubService();
 
 // Match a project to the artifacts most likely to hold its debug evidence.
 // Playwright typically uploads per-project trace/report bundles named with the
-// project (e.g. "traces-os-vendor"); a generic "playwright-report" is the
+// project (e.g. "traces-checkout"); a generic "playwright-report" is the
 // consolidated fallback that covers all projects.
 export function findArtifactsForProject(artifacts: RunArtifact[] | undefined, project: string): RunArtifact[] {
   if (!artifacts || artifacts.length === 0) return [];

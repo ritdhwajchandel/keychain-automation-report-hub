@@ -9,7 +9,8 @@ no reporter plugins or CI changes required.
 
 It runs **entirely in your browser** — no backend. Your GitHub token is kept in
 your browser's `localStorage` and is only ever sent directly to the GitHub API.
-Open the link above to try it instantly in demo mode (sample data, no login).
+Open the link above and connect your GitHub account to analyze your own
+workflow runs — the app has no sample data and shows nothing until you connect.
 
 ## What it does
 
@@ -46,8 +47,8 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-Either way the app starts in **demo mode** with realistic mock data so you can
-explore every feature without credentials.
+Either way, you'll be prompted to **connect GitHub** on first load — the app has
+no built-in sample data and reads your workflow runs on demand once connected.
 
 ### Connect GitHub
 

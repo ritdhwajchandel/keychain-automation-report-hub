@@ -273,9 +273,19 @@ export function parseLogsForTestCases(logText: string): TestCase[] | null {
     errorLines = [];
   };
 
+  // Retry/re-mint attempts of the SAME test are printed as separate lines with
+  // a trailing annotation (e.g. "(retry #1)", "(reminting session)",
+  // "(session expired, reminting)"). Strip these so every attempt collapses to
+  // one name and de-dupes via `byName` — otherwise the project's test list count
+  // is inflated above the Allure/summary total, which counts each test once.
+  const retryAnnotationRe = /\s*\((?:retry|attempt|re-?mint(?:ing|ed)?|session\s*expired)[^)]*\)\s*$/i;
   const stripName = (rest: string): { name: string; duration: number } => {
     const parsed = parseDurationMs(rest);
-    return { name: parsed.name.replace(/\s*\(retry #\d+\)$/i, ''), duration: parsed.duration };
+    // A test may pick up more than one attempt annotation; strip repeatedly.
+    let name = parsed.name;
+    let prev;
+    do { prev = name; name = name.replace(retryAnnotationRe, ''); } while (name !== prev);
+    return { name: name.trim(), duration: parsed.duration };
   };
 
   for (const raw of lines) {

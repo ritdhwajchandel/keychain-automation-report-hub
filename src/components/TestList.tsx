@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import type { TestCase } from '../services/github';
 import { displayTestName } from '../services/insights';
-import { CheckCircle2, XCircle, MinusCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { CheckCircle2, XCircle, MinusCircle, ChevronDown, ChevronRight, Search } from 'lucide-react';
 
 type Filter = 'all' | 'passed' | 'failed' | 'skipped';
 
@@ -24,6 +24,7 @@ interface TestListProps {
 
 export const TestList: React.FC<TestListProps> = ({ tests }) => {
   const [filter, setFilter] = useState<Filter>('all');
+  const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const counts = useMemo(() => ({
@@ -42,7 +43,11 @@ export const TestList: React.FC<TestListProps> = ({ tests }) => {
       .map(x => x.test);
   }, [tests]);
 
-  const visible = filter === 'all' ? ordered : ordered.filter(t => t.status === filter);
+  const q = query.trim().toLowerCase();
+  const visible = ordered.filter(t =>
+    (filter === 'all' || t.status === filter) &&
+    (!q || t.name.toLowerCase().includes(q))
+  );
 
   const toggleExpanded = (name: string) => {
     setExpanded(prev => {
@@ -69,6 +74,19 @@ export const TestList: React.FC<TestListProps> = ({ tests }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      {/* Search this project's tests */}
+      <div style={{ position: 'relative' }}>
+        <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+        <input
+          type="text"
+          className="input-field"
+          placeholder="Search tests in this project…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          style={{ paddingLeft: '2.1rem', fontSize: '0.8rem', padding: '0.5rem 0.75rem 0.5rem 2.1rem' }}
+        />
+      </div>
+
       {/* Filter chips */}
       <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
         {FILTERS.map(f => (
@@ -87,7 +105,7 @@ export const TestList: React.FC<TestListProps> = ({ tests }) => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '420px', overflowY: 'auto', paddingRight: '0.25rem' }}>
         {visible.length === 0 ? (
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', padding: '0.5rem' }}>
-            No {filter} tests in this project.
+            {q ? `No tests match "${query.trim()}"` : `No ${filter} tests in this project.`}
           </p>
         ) : visible.map(test => {
           const { Icon, color } = STATUS_ICON[test.status];

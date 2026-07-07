@@ -55,6 +55,8 @@ export default function App() {
   const [compareRunId, setCompareRunId] = useState<string>('');
   // Cross-run history analysis progress (null = not running)
   const [historyProgress, setHistoryProgress] = useState<{ done: number; total: number } | null>(null);
+  // Ticks every second while a job is running so its elapsed timer advances live
+  const [nowTick, setNowTick] = useState(() => Date.now());
   // Deep-link target from the favorites dashboard, consumed as each loading
   // stage (workflows -> runs) completes
   const pendingNavRef = useRef<{ workflowId?: number; runId?: string; compare?: boolean } | null>(null);
@@ -149,6 +151,15 @@ export default function App() {
       fetchRunArtifacts(selectedRun);
     }
   }, [selectedRun?.id]);
+
+  // While any job in the open run is in progress, tick a 1s clock so its
+  // elapsed-duration timer advances live instead of showing a frozen snapshot.
+  const hasRunningJob = !!selectedRun?.jobs.some(j => j.status === 'in_progress');
+  useEffect(() => {
+    if (!hasRunningJob) return;
+    const id = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [hasRunningJob]);
 
   // Consume a dashboard deep-link once its target run is present. Watching
   // `runs` (instead of hooking fetch completion) keeps this StrictMode-safe
@@ -520,6 +531,15 @@ export default function App() {
       default:
         return <AlertTriangle size={size} style={{ color: 'var(--color-skipped)' }} />;
     }
+  };
+
+  // Live elapsed time for a running job (ticks via nowTick); the fixed final
+  // duration otherwise. Keeps the displayed timer honest instead of frozen.
+  const getLiveJobDuration = (job: JobExecution): number => {
+    if (job.status === 'in_progress' && job.startedAt) {
+      return Math.max(0, Math.round((nowTick - new Date(job.startedAt).getTime()) / 1000));
+    }
+    return job.durationSeconds;
   };
 
   const formatDuration = (seconds: number) => {
@@ -1158,7 +1178,7 @@ export default function App() {
                                             {total} ✓
                                           </span>
                                         )}
-                                        <span>{formatDuration(job.durationSeconds)}</span>
+                                        <span>{formatDuration(getLiveJobDuration(job))}</span>
                                       </div>
                                     </button>
                                   );
@@ -1283,8 +1303,8 @@ export default function App() {
                                        </h3>
                                        <span style={{ fontSize: '0.75rem', color: currentJob.status === 'in_progress' ? 'var(--color-info)' : 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                                          {currentJob.status === 'in_progress'
-                                           ? `Running · ${formatDuration(currentJob.durationSeconds)} elapsed`
-                                           : `Executed in ${formatDuration(currentJob.durationSeconds)}`}
+                                           ? `Running · ${formatDuration(getLiveJobDuration(currentJob))} elapsed`
+                                           : `Executed in ${formatDuration(getLiveJobDuration(currentJob))}`}
                                        </span>
                                      </div>
 

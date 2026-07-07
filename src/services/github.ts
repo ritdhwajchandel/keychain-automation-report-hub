@@ -24,7 +24,9 @@ export interface JobExecution {
   name: string;            // e.g. "test (os-production)"
   project: string;         // e.g. "os-production"
   status: 'success' | 'failure' | 'skipped' | 'queued' | 'in_progress';
-  durationSeconds: number;
+  durationSeconds: number; // final duration once completed; snapshot while running
+  startedAt?: string;      // ISO start time — lets the UI tick a live timer while running
+  completedAt?: string;    // ISO completion time (absent while running)
   steps: JobStep[];
   allureReport: AllureReport;
   htmlUrl?: string;        // GitHub job page URL
@@ -666,6 +668,8 @@ export class GitHubService {
                 project: cleanProject,
                 status: jobState,
                 durationSeconds: jobDuration,
+                startedAt: job.started_at || undefined,
+                completedAt: job.completed_at || undefined,
                 steps,
                 allureReport,
                 htmlUrl: job.html_url

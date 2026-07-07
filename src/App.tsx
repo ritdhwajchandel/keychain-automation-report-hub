@@ -523,6 +523,9 @@ export default function App() {
   };
 
   const formatDuration = (seconds: number) => {
+    // Guard against missing/negative values (e.g. a job still running)
+    if (!Number.isFinite(seconds) || seconds <= 0) return '0s';
+    seconds = Math.round(seconds);
     if (seconds < 60) return `${seconds}s`;
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -1278,8 +1281,10 @@ export default function App() {
                                          <code style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentJob.name}</code>
                                          <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>steps</span>
                                        </h3>
-                                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                                         Executed in {formatDuration(currentJob.durationSeconds)}
+                                       <span style={{ fontSize: '0.75rem', color: currentJob.status === 'in_progress' ? 'var(--color-info)' : 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                         {currentJob.status === 'in_progress'
+                                           ? `Running · ${formatDuration(currentJob.durationSeconds)} elapsed`
+                                           : `Executed in ${formatDuration(currentJob.durationSeconds)}`}
                                        </span>
                                      </div>
 

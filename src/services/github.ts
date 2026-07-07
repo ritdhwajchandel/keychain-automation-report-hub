@@ -641,12 +641,21 @@ export class GitHubService {
               // Real mode: start with empty report, enriched by annotations/logs when user selects this run
               const allureReport: AllureReport = { passed: 0, failed: 0, skipped: 0, total: 0, tests: [] };
 
+              // A running/queued job has no conclusion yet — fall back to its
+              // live status ('in_progress'/'queued') so the UI can animate it.
+              const jobState = job.status === 'completed' ? (job.conclusion || 'neutral') : (job.status || 'queued');
+              // Running jobs have no completed_at; measure elapsed time so far
+              // instead of subtracting from epoch (which gave huge negatives).
+              const jobStartMs = job.started_at ? new Date(job.started_at).getTime() : 0;
+              const jobEndMs = job.completed_at ? new Date(job.completed_at).getTime() : Date.now();
+              const jobDuration = jobStartMs ? Math.max(0, Math.round((jobEndMs - jobStartMs) / 1000)) : 0;
+
               return {
                 id: String(job.id),
                 name: job.name,
                 project: cleanProject,
-                status: job.conclusion || 'queued',
-                durationSeconds: Math.round((new Date(job.completed_at).getTime() - new Date(job.started_at).getTime()) / 1000) || 60,
+                status: jobState,
+                durationSeconds: jobDuration,
                 steps,
                 allureReport,
                 htmlUrl: job.html_url

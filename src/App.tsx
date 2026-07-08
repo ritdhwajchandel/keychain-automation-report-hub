@@ -152,14 +152,17 @@ export default function App() {
     }
   }, [selectedRun?.id]);
 
-  // While any job in the open run is in progress, tick a 1s clock so its
-  // elapsed-duration timer advances live instead of showing a frozen snapshot.
-  const hasRunningJob = !!selectedRun?.jobs.some(j => j.status === 'in_progress');
+  // While the open run (or any of its jobs) is still in progress, tick a 1s
+  // clock so elapsed-duration timers advance live instead of freezing.
+  const runIsLive = !!selectedRun && (
+    (!!selectedRun.status && selectedRun.status !== 'completed') ||
+    selectedRun.jobs.some(j => j.status === 'in_progress')
+  );
   useEffect(() => {
-    if (!hasRunningJob) return;
+    if (!runIsLive) return;
     const id = setInterval(() => setNowTick(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [hasRunningJob]);
+  }, [runIsLive]);
 
   // Consume a dashboard deep-link once its target run is present. Watching
   // `runs` (instead of hooking fetch completion) keeps this StrictMode-safe
@@ -540,6 +543,14 @@ export default function App() {
       return Math.max(0, Math.round((nowTick - new Date(job.startedAt).getTime()) / 1000));
     }
     return job.durationSeconds;
+  };
+
+  // Same idea at the run level: tick elapsed from createdAt while in progress.
+  const getLiveRunDuration = (run: WorkflowRunReport): number => {
+    if (run.status && run.status !== 'completed' && run.createdAt) {
+      return Math.max(0, Math.round((nowTick - new Date(run.createdAt).getTime()) / 1000));
+    }
+    return run.durationSeconds;
   };
 
   const formatDuration = (seconds: number) => {
@@ -1061,8 +1072,8 @@ export default function App() {
                             {/* Info metrics items */}
                             <div className="stat-grid" style={{ maxWidth: '720px' }}>
                               <div className="stat-tile">
-                                <span className="stat-tile__label">Duration</span>
-                                <span className="stat-tile__value" style={{ fontSize: '1.1rem' }}>{formatDuration(selectedRun.durationSeconds)}</span>
+                                <span className="stat-tile__label">{runIsLive ? 'Elapsed' : 'Duration'}</span>
+                                <span className="stat-tile__value" style={{ fontSize: '1.1rem' }}>{formatDuration(getLiveRunDuration(selectedRun))}</span>
                               </div>
                               <div className="stat-tile stat-tile--accent">
                                 <span className="stat-tile__label">Pass rate</span>

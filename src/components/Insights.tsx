@@ -26,7 +26,7 @@ const formatMs = (ms: number): string => {
 
 const SectionCard: React.FC<{ icon: React.ReactNode; title: string; subtitle?: string; className?: string; children: React.ReactNode }> =
   ({ icon, title, subtitle, className, children }) => (
-    <div className={`card ${className || ''}`} style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column' }}>
+    <div className={`card ${className || ''}`} style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
       <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.6rem', marginBottom: '0.9rem' }}>
         <h3 style={{ fontSize: '0.95rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {icon} {title}
@@ -100,21 +100,27 @@ export const Insights: React.FC<InsightsProps> = ({ run, runs }) => {
                     </span>
                   </button>
                   {isOpen && (
-                    <div style={{ padding: '0 0.75rem 0.75rem 2.1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ padding: '0 0.75rem 0.75rem 2.1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: 0 }}>
                       <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
                         {cluster.projects.map(p => (
                           <span key={p} className="badge badge-indigo" style={{ fontSize: '0.65rem', textTransform: 'none' }}>{p}</span>
                         ))}
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '160px', overflowY: 'auto' }}>
+                      {/* minWidth/minHeight:0 let the flex/grid ancestors actually
+                          clip: without them long test names bleed past the card. */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '180px', overflowY: 'auto', minWidth: 0, minHeight: 0 }}>
                         {cluster.tests.map((t, i) => (
-                          <span key={i} style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${t.project} › ${t.name}`}>
-                            <span style={{ color: 'var(--text-muted)' }}>{t.project} ›</span> {t.name}
-                          </span>
+                          <div key={i} style={{ display: 'block', minWidth: 0, fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${t.project} › ${t.name}`}>
+                            <span style={{ color: 'var(--text-muted)' }}>{t.project} ›</span> {displayTestName(t.name)}
+                          </div>
                         ))}
                       </div>
-                      {cluster.sampleError && (
+                      {cluster.sampleError ? (
                         <pre className="test-row__error" style={{ margin: 0 }}>{cluster.sampleError}</pre>
+                      ) : (
+                        <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                          No stack trace was captured for these failures — open the job logs or trace artifact to investigate.
+                        </p>
                       )}
                     </div>
                   )}

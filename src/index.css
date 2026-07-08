@@ -560,6 +560,13 @@ input:focus-visible {
   align-items: stretch;
 }
 
+/* Grid items default to min-width:auto, which lets nowrap children (long test
+   names) push a card wider than its track and break clipping. Force them to
+   shrink so overflow/ellipsis works inside. */
+.insights-grid > * {
+  min-width: 0;
+}
+
 .insights-grid__full {
   grid-column: 1 / -1;
 }

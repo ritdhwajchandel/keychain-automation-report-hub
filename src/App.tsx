@@ -1547,9 +1547,9 @@ export default function App() {
             <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '0.5rem' }}>
               <div style={{ position: 'relative', flex: 1 }}>
                 <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                <input 
+                <input
                   type="text"
-                  placeholder="Search user repositories..."
+                  placeholder="Search by name, or paste owner/repo or a GitHub URL…"
                   className="input-field"
                   style={{ paddingLeft: '2.5rem' }}
                   value={searchQuery}
@@ -1558,6 +1558,9 @@ export default function App() {
               </div>
               <button type="submit" className="btn">Search</button>
             </form>
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '-0.5rem' }}>
+              Tip: for an org or private repo, paste its full path (e.g. <code>atlas-tech-inc/qa-automation</code>) or URL.
+            </p>
 
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '400px', paddingRight: '0.25rem' }}>
               {isLoadingRepos ? (

@@ -407,26 +407,74 @@ export class GitHubService {
     }
   }
 
+  // Normalize a search term into "owner/repo" if the user pasted a full GitHub
+  // URL or an "owner/repo" path; otherwise null (treat as a name search).
+  private parseRepoRef(input: string): string | null {
+    let s = input.trim();
+    if (!s) return null;
+    s = s.replace(/^git@github\.com:/i, '')
+         .replace(/^https?:\/\/(www\.)?github\.com\//i, '')
+         .replace(/\.git$/i, '')
+         .replace(/\/+$/, '');
+    const m = s.match(/^([\w.-]+)\/([\w.-]+)$/);
+    return m ? `${m[1]}/${m[2]}` : null;
+  }
+
+  private mapRepo(r: any): GitHubRepo {
+    return {
+      id: r.id,
+      name: r.name,
+      fullName: r.full_name,
+      description: r.description || 'Automation Repository',
+      stars: r.stargazers_count,
+      forks: r.forks_count,
+      owner: { login: r.owner.login, avatarUrl: r.owner.avatar_url }
+    };
+  }
+
   async getRepositories(query?: string): Promise<GitHubRepo[]> {
     if (!this.token) return [];
-    try {
-      let url = 'https://api.github.com/user/repos?sort=updated&per_page=30';
-      if (query) {
-        url = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}+user:${(await this.getUserInfo()).login}`;
+    const headers = { Authorization: `token ${this.token}` };
+    const q = (query || '').trim();
+
+    // 1. Pasted an "owner/repo" or a GitHub URL — fetch that repo directly.
+    // This reaches org and private repos that name search / the user-repos
+    // listing may not surface (e.g. atlas-tech-inc/qa-automation).
+    const ref = this.parseRepoRef(q);
+    if (ref) {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${ref}`, { headers });
+        if (res.ok) return [this.mapRepo(await res.json())];
+      } catch (e) {
+        console.error('Direct repo lookup failed:', e);
       }
-      const res = await fetch(url, { headers: { Authorization: `token ${this.token}` } });
-      if (!res.ok) throw new Error('Failed');
-      const data = await res.json();
-      const repos = query ? data.items : data;
-      return repos.map((r: any) => ({
-        id: r.id,
-        name: r.name,
-        fullName: r.full_name,
-        description: r.description || 'Automation Repository',
-        stars: r.stargazers_count,
-        forks: r.forks_count,
-        owner: { login: r.owner.login, avatarUrl: r.owner.avatar_url }
-      }));
+      // Not found / no access — fall through to a name search below
+    }
+
+    try {
+      // List every repo the token can see — owner, collaborator, AND org member
+      // — so org repos are included. Paginate up to 200 to cover larger accounts.
+      const perPage = 100;
+      const all: any[] = [];
+      for (let page = 1; page <= 2; page++) {
+        const res = await fetch(
+          `https://api.github.com/user/repos?sort=updated&per_page=${perPage}&page=${page}&affiliation=owner,collaborator,organization_member`,
+          { headers }
+        );
+        if (!res.ok) throw new Error('Failed to list repositories');
+        const batch = await res.json();
+        all.push(...batch);
+        if (batch.length < perPage) break; // last page reached
+      }
+
+      let repos = all.map(r => this.mapRepo(r));
+      if (q) {
+        const ql = q.toLowerCase();
+        repos = repos.filter(r =>
+          r.fullName.toLowerCase().includes(ql) || r.name.toLowerCase().includes(ql)
+        );
+      }
+      return repos;
     } catch (e) {
       console.error('Failed to fetch repositories:', e);
       return [];

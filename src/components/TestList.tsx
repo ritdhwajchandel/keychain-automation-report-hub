@@ -109,22 +109,23 @@ export const TestList: React.FC<TestListProps> = ({ tests }) => {
           </p>
         ) : visible.map(test => {
           const { Icon, color } = STATUS_ICON[test.status];
-          const hasDetails = test.status === 'failed' && !!test.error;
+          // Every test is expandable so its per-test log is one click away.
+          const testLog = test.log || test.error;
           const isOpen = expanded.has(test.name);
           const duration = formatTestDuration(test.duration);
 
           return (
             <div key={test.name}>
               <button
-                onClick={() => hasDetails && toggleExpanded(test.name)}
+                onClick={() => toggleExpanded(test.name)}
                 className="test-row"
-                style={{ cursor: hasDetails ? 'pointer' : 'default', alignItems: 'flex-start' }}
-                aria-expanded={hasDetails ? isOpen : undefined}
+                style={{ cursor: 'pointer', alignItems: 'flex-start' }}
+                aria-expanded={isOpen}
               >
                 <span className="test-row__main" style={{ alignItems: 'flex-start' }}>
-                  {hasDetails && (isOpen
+                  {isOpen
                     ? <ChevronDown size={13} style={{ color: 'var(--text-muted)', flexShrink: 0, marginTop: '2px' }} />
-                    : <ChevronRight size={13} style={{ color: 'var(--text-muted)', flexShrink: 0, marginTop: '2px' }} />)}
+                    : <ChevronRight size={13} style={{ color: 'var(--text-muted)', flexShrink: 0, marginTop: '2px' }} />}
                   <Icon size={14} style={{ color, flexShrink: 0, marginTop: '1px' }} />
                   <span className="test-row__name test-row__name--wrap" title={test.name}>{displayTestName(test.name)}</span>
                 </span>
@@ -133,8 +134,18 @@ export const TestList: React.FC<TestListProps> = ({ tests }) => {
                 </span>
               </button>
 
-              {hasDetails && isOpen && (
-                <pre className="test-row__error">{test.error}</pre>
+              {isOpen && (
+                testLog ? (
+                  <pre className="test-row__error" style={{ maxHeight: '320px', overflow: 'auto' }}>{testLog}</pre>
+                ) : (
+                  <p style={{ margin: '0.25rem 0 0.4rem 1.8rem', fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                    {test.status === 'passed'
+                      ? 'Passed — no per-test log was emitted. See the full job log or the run’s trace artifact for details.'
+                      : test.status === 'skipped'
+                        ? 'Skipped — this test did not run.'
+                        : 'No log captured for this test — check the full job log or trace artifact.'}
+                  </p>
+                )
               )}
             </div>
           );

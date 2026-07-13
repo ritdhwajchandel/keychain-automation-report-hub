@@ -2,7 +2,8 @@ export interface TestCase {
   name: string;
   status: 'passed' | 'failed' | 'skipped';
   duration: number; // in ms
-  error?: string;
+  error?: string;   // concise error signature (used for clustering + preview)
+  log?: string;     // fuller per-test log block from the failure-details section
 }
 
 export interface AllureReport {
@@ -267,7 +268,11 @@ export function parseLogsForTestCases(logText: string): TestCase[] | null {
       const test = byName.get(collectingErrorFor);
       // The failure-details section is authoritative; inline capture only fills a gap
       if (test && (collectingFromSection || !test.error)) {
-        test.error = errorLines.join('\n').trim();
+        const block = errorLines.join('\n').trim();
+        // Full block = the per-test log; concise head = the error signature used
+        // for clustering and the row preview.
+        test.log = block;
+        test.error = errorLines.slice(0, 15).join('\n').trim();
       }
     }
     collectingErrorFor = null;
@@ -341,9 +346,12 @@ export function parseLogsForTestCases(logText: string): TestCase[] | null {
       const content = raw.replace(/^\s*##\[error\]/, '').replace(/\s+$/, '');
       const trimmed = content.trim();
       const isNoise = trimmed.startsWith('##[') || jobNoiseRe.test(trimmed) || /^─+$/.test(trimmed);
+      // Keep the whole per-test failure block (error, code frame, call log) up
+      // to a generous cap; inline (non-section) capture stays tighter since it
+      // isn't clearly delimited. flushError splits out a concise error head.
       const isEnd = summaryLineRe.test(trimmed) ||
         (!collectingFromSection && (!trimmed || trimmed.startsWith('['))) ||
-        errorLines.length >= 15;
+        errorLines.length >= (collectingFromSection ? 60 : 15);
 
       if (isEnd) {
         flushError();

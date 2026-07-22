@@ -7,7 +7,7 @@ import { TestList } from './components/TestList';
 import { TrendChart } from './components/TrendChart';
 import { Insights } from './components/Insights';
 import { AIChat } from './components/AIChat';
-import { githubService, parseLogsForTestCases, findArtifactsForProject, isTraceArtifact, formatBytes } from './services/github';
+import { githubService, parseLogsForTestCases, findArtifactsForProject, isTraceArtifact, formatBytes, resolveAllureBase, fetchAllureIndex, allureCaseUrl } from './services/github';
 import type { GitHubRepo, WorkflowRunReport, GitHubWorkflow, JobExecution } from './services/github';
 import { getRunStats, isRunAnalyzed, findFlakyTests } from './services/insights';
 import { saveRunHistory, applyRunHistory } from './services/history';
@@ -69,6 +69,14 @@ export default function App() {
   const [anthropicKeyInput, setAnthropicKeyInput] = useState(aiService.getApiKey('anthropic') || '');
   const [ollamaUrlInput, setOllamaUrlInput] = useState(aiService.getOllamaUrl() || '');
   const [ollamaModelInput, setOllamaModelInput] = useState(aiService.getOllamaModel() || '');
+  // Allure report URL template — used to deep-link individual test cases.
+  // Placeholders: {owner} {repo} {run}. Empty disables the integration.
+  const [allureTemplate, setAllureTemplate] = useState(
+    () => localStorage.getItem('allure_report_template') || 'https://{owner}.github.io/{repo}/reports/{run}/'
+  );
+  // Resolved report base + case index for the currently open run
+  const [allureIndex, setAllureIndex] = useState<import('./services/github').AllureIndex | null>(null);
+  const [allureBase, setAllureBase] = useState<string | null>(null);
 
   const [userAvatar, setUserAvatar] = useState('');
   const [username, setUsername] = useState('');
@@ -151,6 +159,21 @@ export default function App() {
       fetchRunArtifacts(selectedRun);
     }
   }, [selectedRun?.id]);
+
+  // Resolve the published Allure report for this run and index its cases so we
+  // can deep-link individual failures. Best-effort — silently off if the
+  // template is empty or the report isn't reachable yet.
+  useEffect(() => {
+    setAllureIndex(null);
+    setAllureBase(null);
+    if (!selectedRun || !selectedRepo) return;
+    const base = resolveAllureBase(allureTemplate, selectedRepo.fullName, selectedRun.runNumber);
+    if (!base) return;
+    setAllureBase(base);
+    let cancelled = false;
+    fetchAllureIndex(base).then(idx => { if (!cancelled) setAllureIndex(idx); });
+    return () => { cancelled = true; };
+  }, [selectedRun?.id, selectedRepo?.fullName, allureTemplate]);
 
   // While the open run (or any of its jobs) is still in progress, tick a 1s
   // clock so elapsed-duration timers advance live instead of freezing.
@@ -459,7 +482,8 @@ export default function App() {
     aiService.setApiKey('gemini', geminiKeyInput.trim());
     aiService.setApiKey('anthropic', anthropicKeyInput.trim());
     aiService.setOllamaConfig(ollamaUrlInput.trim(), ollamaModelInput.trim());
-    
+    localStorage.setItem('allure_report_template', allureTemplate.trim());
+
     setShowSettingsModal(false);
     handleGithubStateChange();
   };
@@ -1066,6 +1090,18 @@ export default function App() {
                                     <Package size={12} /> {selectedRun.artifacts.length} artifact{selectedRun.artifacts.length > 1 ? 's' : ''}
                                   </a>
                                 )}
+                                {allureBase && (
+                                  <a
+                                    href={`${allureBase}index.html`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="btn btn-secondary"
+                                    style={{ padding: '0.3rem 0.7rem', fontSize: '0.72rem', gap: '0.3rem' }}
+                                    title={allureIndex ? 'Open the published Allure report' : 'Allure report (not reachable yet for this run)'}
+                                  >
+                                    <ExternalLink size={12} /> Allure report{allureIndex ? '' : ' (?)'}
+                                  </a>
+                                )}
                               </div>
                             </div>
 
@@ -1408,7 +1444,11 @@ export default function App() {
                                          {currentJob.allureReport.total} tests
                                        </span>
                                      </div>
-                                     <TestList key={currentJob.id} tests={currentJob.allureReport.tests} />
+                                     <TestList
+                                       key={currentJob.id}
+                                       tests={currentJob.allureReport.tests}
+                                       allureUrlFor={(name) => allureCaseUrl(allureIndex, currentJob.project, name)}
+                                     />
                                    </div>
 
                                    {/* Terminal Console Logs Window */}
@@ -1783,10 +1823,31 @@ export default function App() {
                 </div>
               </div>
 
+              {/* Allure report deep-linking */}
+              <div style={{ marginTop: '1.25rem' }}>
+                <h3 style={{ fontSize: '0.9rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.4rem' }}>
+                  4. Allure Report Deep-Links
+                </h3>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>
+                  Published report URL template
+                </label>
+                <input
+                  type="text"
+                  value={allureTemplate}
+                  onChange={(e) => setAllureTemplate(e.target.value)}
+                  placeholder="https://{owner}.github.io/{repo}/reports/{run}/"
+                  className="input-field"
+                />
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.4rem', lineHeight: 1.5 }}>
+                  Placeholders: <code>{'{owner}'}</code> <code>{'{repo}'}</code> <code>{'{run}'}</code> (run number).
+                  When set, failed tests link straight to their case in the Allure report. Leave blank to disable.
+                </p>
+              </div>
+
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
+                <button
+                  type="button"
+                  className="btn btn-secondary"
                   onClick={() => setShowSettingsModal(false)}
                   style={{ padding: '0.5rem 1rem' }}
                 >

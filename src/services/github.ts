@@ -824,3 +824,74 @@ export function formatBytes(bytes: number): string {
   }
   return `${value.toFixed(value < 10 && unit > 0 ? 1 : 0)} ${units[unit]}`;
 }
+
+// --- Allure report deep-linking --------------------------------------------
+// Published Allure reports (e.g. on GitHub Pages) expose data/suites.json — a
+// tree whose leaf nodes carry `uid` + `parentUid`. The report deep-links a case
+// as `index.html#suites/{parentUid}/{uid}/`, so we can jump straight to a
+// specific failure's error context instead of the report root.
+
+export interface AllureCaseRef { uid: string; parentUid: string; }
+
+export interface AllureIndex {
+  base: string;                                   // report base URL, trailing slash
+  byProjectTitle: Record<string, AllureCaseRef>;  // "project::title" -> ref
+  byTitle: Record<string, AllureCaseRef | null>;  // "title" -> ref, or null if ambiguous
+}
+
+const allureNorm = (s: string): string => (s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+// Resolve a URL template into a concrete report base. Supported placeholders:
+// {owner} {repo} {run}/{runNumber}. Always returns a trailing slash.
+export function resolveAllureBase(template: string, repoFullName: string, runNumber: number): string | null {
+  if (!template || !template.trim()) return null;
+  const [owner, repo] = repoFullName.split('/');
+  let url = template.trim()
+    .replace(/\{owner\}/g, owner || '')
+    .replace(/\{repo\}/g, repo || '')
+    .replace(/\{run(Number)?\}/g, String(runNumber));
+  if (!/^https?:\/\//i.test(url)) return null;
+  if (!url.endsWith('/')) url += '/';
+  return url;
+}
+
+// Fetch and index a published Allure report's suites tree. Best-effort: returns
+// null if the report isn't reachable (not published yet, 404, or CORS-blocked).
+export async function fetchAllureIndex(base: string): Promise<AllureIndex | null> {
+  try {
+    const res = await fetch(`${base}data/suites.json`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    const tree = await res.json();
+    const byProjectTitle: Record<string, AllureCaseRef> = {};
+    const byTitle: Record<string, AllureCaseRef | null> = {};
+
+    const walk = (node: any) => {
+      if (node?.children?.length) { node.children.forEach(walk); return; }
+      if (!node?.uid || !node?.parentUid || !node?.name) return;
+      const ref: AllureCaseRef = { uid: node.uid, parentUid: node.parentUid };
+      const title = allureNorm(node.name);
+      const project = allureNorm(Array.isArray(node.parameters) ? String(node.parameters[0] ?? '') : '');
+      byProjectTitle[`${project}::${title}`] = ref;
+      // Global title map: first wins, but mark ambiguous (null) on collision so
+      // the fallback never links to the wrong case.
+      byTitle[title] = title in byTitle ? null : ref;
+    };
+    if (tree?.children) tree.children.forEach(walk);
+    else return null;
+
+    return { base, byProjectTitle, byTitle };
+  } catch {
+    return null; // network/CORS/parse failure — feature simply stays hidden
+  }
+}
+
+// Build the deep link for one test, or null if it can't be matched confidently.
+export function allureCaseUrl(index: AllureIndex | null, project: string, testName: string): string | null {
+  if (!index) return null;
+  const title = allureNorm(testName.includes(' › ') ? testName.split(' › ').pop()! : testName);
+  if (!title) return null;
+  let ref = index.byProjectTitle[`${allureNorm(project)}::${title}`];
+  if (!ref) ref = index.byTitle[title] || undefined as any; // global fallback only if unambiguous
+  if (!ref) return null;
+  return `${index.base}index.html#suites/${ref.parentUid}/${ref.uid}/`;
+}

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import type { TestCase } from '../services/github';
 import { displayTestName } from '../services/insights';
-import { CheckCircle2, XCircle, MinusCircle, ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { CheckCircle2, XCircle, MinusCircle, ChevronDown, ChevronRight, Search, ExternalLink } from 'lucide-react';
 
 type Filter = 'all' | 'passed' | 'failed' | 'skipped';
 
@@ -20,9 +20,11 @@ const formatTestDuration = (ms: number): string => {
 
 interface TestListProps {
   tests: TestCase[];
+  // Returns a deep link to this test's case in the Allure report, or null.
+  allureUrlFor?: (testName: string) => string | null;
 }
 
-export const TestList: React.FC<TestListProps> = ({ tests }) => {
+export const TestList: React.FC<TestListProps> = ({ tests, allureUrlFor }) => {
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -113,6 +115,7 @@ export const TestList: React.FC<TestListProps> = ({ tests }) => {
           const testLog = test.log || test.error;
           const isOpen = expanded.has(test.name);
           const duration = formatTestDuration(test.duration);
+          const allureUrl = allureUrlFor ? allureUrlFor(test.name) : null;
 
           return (
             <div key={test.name}>
@@ -135,17 +138,31 @@ export const TestList: React.FC<TestListProps> = ({ tests }) => {
               </button>
 
               {isOpen && (
-                testLog ? (
-                  <pre className="test-row__error" style={{ maxHeight: '320px', overflow: 'auto' }}>{testLog}</pre>
-                ) : (
-                  <p style={{ margin: '0.25rem 0 0.4rem 1.8rem', fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                    {test.status === 'passed'
-                      ? 'Passed — no per-test log was emitted. See the full job log or the run’s trace artifact for details.'
-                      : test.status === 'skipped'
-                        ? 'Skipped — this test did not run.'
-                        : 'No log captured for this test — check the full job log or trace artifact.'}
-                  </p>
-                )
+                <div style={{ margin: '0.25rem 0 0.4rem 1.8rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  {allureUrl && (
+                    <a
+                      href={allureUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="artifact-link"
+                      style={{ alignSelf: 'flex-start' }}
+                      title="Open this exact case in the Allure report (steps, screenshots, error context)"
+                    >
+                      <ExternalLink size={11} /> Open in Allure report
+                    </a>
+                  )}
+                  {testLog ? (
+                    <pre className="test-row__error" style={{ margin: 0, maxHeight: '320px', overflow: 'auto' }}>{testLog}</pre>
+                  ) : (
+                    <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                      {test.status === 'passed'
+                        ? 'Passed — no per-test log was emitted. Open in Allure (if available) or see the trace artifact for full detail.'
+                        : test.status === 'skipped'
+                          ? 'Skipped — this test did not run.'
+                          : 'No log captured for this test — check the full job log or trace artifact.'}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           );
